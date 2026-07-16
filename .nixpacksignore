@@ -1,0 +1,3 @@
+# Ignora a pasta de skills para evitar que o Nixpacks detecte Node.js
+# e para reduzir o tempo de cópia dos arquivos no deploy.
+skills/

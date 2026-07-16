@@ -1,0 +1,32 @@
+# Nixpacks configuration for deploying the Flutter app as a static web site.
+# This pins nixpkgs to a snapshot recent enough to include Dart >= 3.10.4,
+# which fixes the "The current Dart SDK version is 3.0.6" error.
+
+# Disable the default Dart provider so we can use Flutter commands instead.
+providers = []
+
+[phases.setup]
+nixpkgsArchive = '4eec65df50d796a8fd9c146a09b5007916ce376b'
+nixPkgs = ['flutter', 'nginx', 'git', 'curl', 'unzip', 'gettext', 'nodejs']
+
+[phases.install]
+cmds = [
+  'flutter config --no-analytics',
+  'flutter pub get',
+]
+
+[phases.build]
+cmds = [
+  'flutter build web --release --no-tree-shake-icons',
+  'echo "=== Verificando arquivos do build ==="',
+  'ls -la build/web || (echo "ERRO: build/web nao foi gerado" && exit 1)',
+  'test -f build/web/index.html || (echo "ERRO: index.html nao encontrado" && exit 1)',
+  'test -f build/web/flutter_bootstrap.js || (echo "ERRO: flutter_bootstrap.js nao encontrado" && exit 1)',
+  'echo "=== Build concluido com sucesso ==="',
+]
+
+[start]
+cmd = """mkdir -p /tmp/nginx && envsubst '${PORT}' < /app/nginx.conf > /tmp/nginx/nginx.conf && nginx -c /tmp/nginx/nginx.conf -g "daemon off;""""
+
+[deploy]
+healthcheck = '/'

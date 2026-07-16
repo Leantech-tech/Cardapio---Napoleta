@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Cardápio digital da Napoleta.">
+  <meta name="theme-color" content="#7B1FA2">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Napoleta">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png?v=2">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png?v=2"/>
+  <link rel="shortcut icon" href="favicon.png?v=2" type="image/png"/>
+
+  <title>Napoleta</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Pré-carrega a fonte de ícones do Material para evitar que suma no tablet/navegadores mobile -->
+  <link rel="preload" href="assets/fonts/MaterialIcons-Regular.otf" as="font" type="font/otf" crossorigin>
+</head>
+<body>
+  <script>
+    // Remove service workers antigos para evitar cache de versões anteriores.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (var i = 0; i < registrations.length; i++) {
+          registrations[i].unregister();
+        }
+      });
+    }
+  </script>
+  <div id="flutter-errors" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#fff; color:#c00; padding:20px; font-family:monospace; white-space:pre-wrap; z-index:99999; overflow:auto;">
+    <strong>Erros ao iniciar o app:</strong>
+  </div>
+  <script>
+    (function() {
+      var errorBox = document.getElementById('flutter-errors');
+      function showError(msg) {
+        errorBox.style.display = 'block';
+        errorBox.appendChild(document.createTextNode('\n' + msg));
+      }
+      window.onerror = function(message, source, lineno, colno, error) {
+        showError('JS ERROR: ' + message + ' em ' + source + ':' + lineno + ':' + colno + '\n' + (error && error.stack ? error.stack : ''));
+      };
+      window.addEventListener('unhandledrejection', function(event) {
+        showError('PROMISE REJECTED: ' + event.reason);
+      });
+    })();
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
