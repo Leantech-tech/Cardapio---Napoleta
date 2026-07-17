@@ -46,6 +46,15 @@ class TachaoApp extends StatelessWidget {
               darkTheme: AppTheme.darkTheme,
               themeMode: themeProvider.themeMode,
               home: const MenuScreen(),
+              builder: (context, child) {
+                return DefaultTextStyle.merge(
+                  style: const TextStyle(
+                    decoration: TextDecoration.none,
+                    decorationColor: Colors.transparent,
+                  ),
+                  child: child!,
+                );
+              },
             ),
           );
         },

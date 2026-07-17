@@ -120,7 +120,7 @@ class ProductCardGrid extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: AppTheme.honeyGold.withValues(alpha: 0.22),
+                              color: AppTheme.inputBg(context),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(

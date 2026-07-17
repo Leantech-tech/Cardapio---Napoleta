@@ -19,6 +19,11 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isTablet = screenWidth >= 700;
+    final imageWidth = isTablet ? 160.0 : 130.0;
+    final imageHeight = isTablet ? 180.0 : 148.0;
+
     return FadeInUp(
       duration: const Duration(milliseconds: 400),
       delay: Duration(milliseconds: index * 80),
@@ -49,8 +54,8 @@ class ProductCard extends StatelessWidget {
                   bottomLeft: Radius.circular(20),
                 ),
                 child: SizedBox(
-                  width: 130,
-                  height: 148,
+                  width: imageWidth,
+                  height: imageHeight,
                   child: ProductImage(
                     product: product,
                     borderRadius: const BorderRadius.only(
@@ -118,7 +123,7 @@ class ProductCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: AppTheme.honeyGold.withValues(alpha: 0.22),
+                              color: AppTheme.inputBg(context),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(

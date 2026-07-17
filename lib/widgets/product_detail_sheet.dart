@@ -194,10 +194,10 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
     );
   }
 
-  Widget _buildProductImage(BuildContext context) {
+  Widget _buildProductImage(BuildContext context, double imageHeight) {
     if (widget.product.imagePath.isEmpty) {
       return Container(
-        height: 240,
+        height: imageHeight,
         color: AppTheme.inputBg(context),
         child: Icon(
           Icons.image_not_supported,
@@ -211,10 +211,10 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
       return Image.network(
         widget.product.imagePath,
         width: double.infinity,
-        height: 240,
+        height: imageHeight,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => Container(
-          height: 240,
+          height: imageHeight,
           color: AppTheme.inputBg(context),
           child: Icon(
             Icons.image_not_supported,
@@ -228,10 +228,10 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
     return Image.asset(
       widget.product.imagePath,
       width: double.infinity,
-      height: 240,
+      height: imageHeight,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => Container(
-        height: 240,
+        height: imageHeight,
         color: AppTheme.inputBg(context),
         child: Icon(
           Icons.image_not_supported,
@@ -246,6 +246,8 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   Widget build(BuildContext context) {
     final hasOptions = widget.product.optionGroups.isNotEmpty;
     final canAdd = _canAddToCart();
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final imageHeight = (screenHeight * 0.22).clamp(180.0, 260.0);
 
     return Container(
       decoration: const BoxDecoration(
@@ -274,7 +276,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                   // Image
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: _buildProductImage(context),
+                    child: _buildProductImage(context, imageHeight),
                   ),
                   const SizedBox(height: 20),
                   // Name
@@ -464,40 +466,42 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                         ],
                       );
                     }),
-                  // Ingredients
-                  Text(
-                    'Ingredientes',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.darkText,
+                  if (!widget.product.isRefrigerante) ...[
+                    // Ingredients
+                    Text(
+                      'Ingredientes',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.darkText,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: widget.product.ingredients.map((ingredient) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.inputBg(context),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          ingredient,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppTheme.greyText,
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: widget.product.ingredients.map((ingredient) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
                           ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 20),
+                          decoration: BoxDecoration(
+                            color: AppTheme.inputBg(context),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            ingredient,
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppTheme.greyText,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   // Observation
                   Text(
                     'Observações',

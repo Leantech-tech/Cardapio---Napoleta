@@ -21,6 +21,7 @@ import '../widgets/product_card_grid.dart';
 import '../widgets/barcode_scanner_screen.dart';
 import '../widgets/comanda_viewer_sheet.dart';
 import '../widgets/cart_panel.dart';
+import '../widgets/mini_cart_preview.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/comanda_service.dart';
 import '../services/kiosk_service.dart';
@@ -36,6 +37,7 @@ class MenuScreen extends StatefulWidget {
 class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   String selectedCategoryId = '';
   bool _isCartOpen = false;
+  bool _showMiniCart = false;
 
   // Controle do gesto secreto para saída administrativa do modo quiosque.
   int _adminTapCount = 0;
@@ -176,7 +178,10 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       ),
     );
     if (added == true && mounted) {
-      setState(() => _isCartOpen = true);
+      final screenWidth = MediaQuery.sizeOf(context).width;
+      if (screenWidth >= 700) {
+        setState(() => _showMiniCart = true);
+      }
     }
   }
 
@@ -542,22 +547,16 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                 tooltip: 'Configurações',
                 visualDensity: VisualDensity.compact,
               ),
-              Consumer<AuthProvider>(
-                builder: (context, authProvider, child) {
-                  if (!authProvider.useComandaFeature) {
-                    return const SizedBox.shrink();
-                  }
-                  return IconButton(
-                    onPressed: _consultarComanda,
-                    icon: Icon(
-                      Icons.receipt_long_outlined,
-                      color: AppTheme.textSecondary(context),
-                    ),
-                    tooltip: 'Consultar Comanda',
-                    visualDensity: VisualDensity.compact,
-                  );
-                },
-              ),
+              if (authProvider.useComandaFeature)
+                IconButton(
+                  onPressed: _consultarComanda,
+                  icon: Icon(
+                    Icons.receipt_long_outlined,
+                    color: AppTheme.textSecondary(context),
+                  ),
+                  tooltip: 'Consultar Comanda',
+                  visualDensity: VisualDensity.compact,
+                ),
               IconButton(
                 onPressed: () => context.read<ThemeProvider>().toggleTheme(),
                 icon: Icon(
@@ -675,6 +674,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     List<Product> filteredProducts,
     String sectionTitle,
     MenuProvider menuProvider,
+    double availableHeight,
   ) {
     return Expanded(
       child: Container(
@@ -763,7 +763,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     sliver: SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
-                        childAspectRatio: 0.74,
+                        childAspectRatio: availableHeight < 500 ? 0.95 : 0.74,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
                       ),
@@ -927,6 +927,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                                       filteredProducts,
                                       sectionTitle,
                                       menuProvider,
+                                      constraints.maxHeight,
                                     ),
                                   ],
                                 ),
@@ -969,6 +970,20 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           ),
         ),
         screensaverWidget,
+        Positioned(
+          top: 0,
+          right: 0,
+          bottom: 0,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: _showMiniCart
+                ? MiniCartPreview(
+                    key: const ValueKey('mini_cart_preview'),
+                    onClose: () => setState(() => _showMiniCart = false),
+                  )
+                : const SizedBox.shrink(key: ValueKey('mini_cart_hidden')),
+          ),
+        ),
         CartPanelBarrier(
           isOpen: _isCartOpen,
           onClose: () => setState(() => _isCartOpen = false),

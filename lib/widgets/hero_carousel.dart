@@ -121,15 +121,21 @@ class _HeroCarouselState extends State<HeroCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final isTablet = width >= 700;
-    final horizontalPadding = isTablet
-        ? (width >= 1100 ? width * 0.08 : 32.0)
-        : 20.0;
-    final height = isTablet ? 280.0 : 200.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final maxHeight = constraints.maxHeight;
+        final isTablet = width >= 700;
+        final horizontalPadding = isTablet
+            ? (width >= 1100 ? width * 0.08 : 32.0)
+            : 20.0;
+        final baseHeight = isTablet ? 280.0 : 200.0;
+        final height = maxHeight > 0
+            ? (maxHeight * (isTablet ? 0.35 : 0.30)).clamp(160.0, baseHeight)
+            : baseHeight;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: SizedBox(
@@ -256,6 +262,8 @@ class _HeroCarouselState extends State<HeroCarousel> {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

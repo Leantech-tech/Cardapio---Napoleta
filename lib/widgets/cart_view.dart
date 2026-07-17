@@ -256,10 +256,15 @@ class _CartViewState extends State<CartView> {
   }
 
   Widget _buildCartItemImage(BuildContext context, String imagePath) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isTablet = screenWidth >= 700;
+    final imageSize = isTablet ? 90.0 : 76.0;
+    final iconSize = isTablet ? 34.0 : 28.0;
+
     if (imagePath.isEmpty) {
       return Container(
-        width: 76,
-        height: 76,
+        width: imageSize,
+        height: imageSize,
         decoration: BoxDecoration(
           color: AppTheme.inputBg(context),
           borderRadius: BorderRadius.circular(12),
@@ -267,7 +272,7 @@ class _CartViewState extends State<CartView> {
         child: Icon(
           Icons.image_not_supported,
           color: AppTheme.textSecondary(context),
-          size: 28,
+          size: iconSize,
         ),
       );
     }
@@ -278,12 +283,12 @@ class _CartViewState extends State<CartView> {
         child: AdaptiveNetworkImage(
           key: ValueKey(imagePath),
           imageUrl: imagePath,
-          width: 76,
-          height: 76,
+          width: imageSize,
+          height: imageSize,
           fit: BoxFit.cover,
           placeholder: (context) => Container(
-            width: 76,
-            height: 76,
+            width: imageSize,
+            height: imageSize,
             decoration: BoxDecoration(
               color: AppTheme.inputBg(context),
               borderRadius: BorderRadius.circular(12),
@@ -293,8 +298,8 @@ class _CartViewState extends State<CartView> {
             ),
           ),
           errorBuilder: (context, error) => Container(
-            width: 76,
-            height: 76,
+            width: imageSize,
+            height: imageSize,
             decoration: BoxDecoration(
               color: AppTheme.inputBg(context),
               borderRadius: BorderRadius.circular(12),
@@ -302,7 +307,7 @@ class _CartViewState extends State<CartView> {
             child: Icon(
               Icons.image_not_supported,
               color: AppTheme.textSecondary(context),
-              size: 28,
+              size: iconSize,
             ),
           ),
         ),
@@ -313,12 +318,12 @@ class _CartViewState extends State<CartView> {
       borderRadius: BorderRadius.circular(12),
       child: Image.asset(
         imagePath,
-        width: 76,
-        height: 76,
+        width: imageSize,
+        height: imageSize,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => Container(
-          width: 76,
-          height: 76,
+          width: imageSize,
+          height: imageSize,
           decoration: BoxDecoration(
             color: AppTheme.inputBg(context),
             borderRadius: BorderRadius.circular(12),
@@ -326,7 +331,7 @@ class _CartViewState extends State<CartView> {
           child: Icon(
             Icons.image_not_supported,
             color: AppTheme.textSecondary(context),
-            size: 28,
+            size: iconSize,
           ),
         ),
       ),
@@ -444,9 +449,11 @@ class _CartViewState extends State<CartView> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
         final isTablet = width >= 700;
         final crossAxisCount = isTablet ? 2 : 1;
         final horizontalPadding = isTablet ? 20.0 : 16.0;
+        final aspectRatio = height < 400 ? 3.4 : 2.8;
 
         if (crossAxisCount > 1) {
           return GridView.builder(
@@ -458,7 +465,7 @@ class _CartViewState extends State<CartView> {
             ),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
-              childAspectRatio: 2.8,
+              childAspectRatio: aspectRatio,
               crossAxisSpacing: 16,
               mainAxisSpacing: 12,
             ),

@@ -28,6 +28,8 @@ class Product {
     return min;
   }
 
+  bool get isRefrigerante => name.toLowerCase().contains('refrigerante');
+
   String get priceDisplay {
     if (price == 0 && minPrice > 0) {
       return 'A partir de R\$ ${minPrice.toStringAsFixed(2).replaceAll('.', ',')}';

@@ -16,7 +16,14 @@ class CartPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final panelWidth = width >= 800 ? width * 0.5 : width * 0.88;
+    final double panelWidth;
+    if (width >= 1200) {
+      panelWidth = 500.0;
+    } else if (width >= 800) {
+      panelWidth = width * 0.5;
+    } else {
+      panelWidth = width * 0.88;
+    }
     final borderRadius = width >= 800 ? 24.0 : 20.0;
 
     return AnimatedPositioned(

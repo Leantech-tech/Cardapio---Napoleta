@@ -321,6 +321,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   Widget _buildIngredientsChip(BuildContext context) {
+    if (widget.product.isRefrigerante) {
+      return const SizedBox.shrink();
+    }
     return GestureDetector(
       onTap: () => _showIngredientsSheet(context),
       child: Container(
@@ -716,6 +719,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth >= 800;
+          final maxWidth = constraints.maxWidth;
+          final maxHeight = constraints.maxHeight;
+          final imageSize = isWide
+              ? (maxWidth * 0.30).clamp(200.0, 300.0).toDouble()
+              : (maxWidth * 0.55).clamp(200.0, 280.0).toDouble();
+          final clampedImageSize = maxHeight > 0
+              ? imageSize.clamp(160.0, maxHeight * 0.45)
+              : imageSize;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -727,11 +738,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: 280,
+                        width: clampedImageSize,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildImageWithBadge(context, size: 280),
+                            _buildImageWithBadge(context, size: clampedImageSize),
                             const SizedBox(height: 20),
                             _buildProductInfo(context),
                             const SizedBox(height: 20),
@@ -762,7 +773,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Center(
-                        child: _buildImageWithBadge(context, size: 260),
+                        child: _buildImageWithBadge(context, size: clampedImageSize),
                       ),
                       const SizedBox(height: 20),
                       _buildProductInfo(context),
