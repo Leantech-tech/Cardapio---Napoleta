@@ -7,12 +7,12 @@ import '../theme/app_theme.dart';
 import 'adaptive_image.dart';
 
 class MiniCartPreview extends StatelessWidget {
-  final VoidCallback onClose;
+  final VoidCallback? onClose;
   final VoidCallback onCheckout;
 
   const MiniCartPreview({
     super.key,
-    required this.onClose,
+    this.onClose,
     required this.onCheckout,
   });
 
@@ -135,13 +135,11 @@ class MiniCartPreview extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenWidth = MediaQuery.sizeOf(context).width;
-        final panelWidth = screenWidth >= 800 ? 360.0 : screenWidth * 0.85;
+        final panelWidth = (screenWidth >= 800 ? 360.0 : screenWidth * 0.85) - 8;
 
         return Consumer<CartProvider>(
           builder: (context, cart, child) {
-            if (cart.items.isEmpty) {
-              return const SizedBox.shrink();
-            }
+            final isEmpty = cart.items.isEmpty;
 
             return Material(
               elevation: 8,
@@ -164,36 +162,53 @@ class MiniCartPreview extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Mostruário',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.textPrimary(context),
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: onClose,
-                          child: Icon(
-                            Icons.close,
-                            size: 20,
-                            color: AppTheme.textSecondary(context),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Mostruário',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary(context),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: cart.items.length,
-                        itemBuilder: (context, index) {
-                          return _buildItem(context, cart.items[index], cart);
-                        },
-                      ),
+                      child: isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.shopping_bag_outlined,
+                                    size: 48,
+                                    color: AppTheme.textSecondary(context).withValues(alpha: 0.5),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Carrinho vazio',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.textSecondary(context),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Adicione produtos ao cardápio',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: AppTheme.textSecondary(context).withValues(alpha: 0.7),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: cart.items.length,
+                              itemBuilder: (context, index) {
+                                return _buildItem(context, cart.items[index], cart);
+                              },
+                            ),
                     ),
                     const SizedBox(height: 12),
                     Container(
@@ -215,10 +230,12 @@ class MiniCartPreview extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: onCheckout,
+                      onPressed: isEmpty ? null : onCheckout,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.tachaoRed,
                         foregroundColor: Colors.white,
+                        disabledBackgroundColor: AppTheme.inputBg(context),
+                        disabledForegroundColor: AppTheme.textSecondary(context),
                         minimumSize: const Size(double.infinity, 48),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

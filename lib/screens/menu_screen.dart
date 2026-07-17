@@ -38,7 +38,6 @@ class MenuScreen extends StatefulWidget {
 class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   String selectedCategoryId = '';
   bool _isCartOpen = false;
-  bool _showMiniCart = false;
 
   // Controle do gesto secreto para saída administrativa do modo quiosque.
   int _adminTapCount = 0;
@@ -179,10 +178,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       ),
     );
     if (added == true && mounted) {
-      final screenWidth = MediaQuery.sizeOf(context).width;
-      if (screenWidth >= 700) {
-        setState(() => _showMiniCart = true);
-      }
+      // Mostruário é exibido automaticamente enquanto houver itens no carrinho.
     }
   }
 
@@ -672,6 +668,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     bool isDesktop,
     int crossAxisCount,
     bool isGrid,
+    bool useCompactCards,
     List<Product> filteredProducts,
     String sectionTitle,
     MenuProvider menuProvider,
@@ -679,7 +676,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   ) {
     return Expanded(
       child: Container(
-        margin: const EdgeInsets.only(right: 16),
+        margin: EdgeInsets.only(right: useCompactCards ? 8 : 16),
         decoration: BoxDecoration(
           color: AppTheme.surface(context),
           borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
@@ -760,11 +757,13 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   )
                 else if (isGrid)
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                    padding: EdgeInsets.fromLTRB(16, 8, useCompactCards ? 10 : 16, 32),
                     sliver: SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
-                        childAspectRatio: availableHeight < 500 ? 0.95 : 0.74,
+                        childAspectRatio: availableHeight < 500
+                            ? 0.95
+                            : (useCompactCards ? 0.86 : 0.74),
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
                       ),
@@ -784,7 +783,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   )
                 else
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                    padding: EdgeInsets.fromLTRB(16, 8, useCompactCards ? 10 : 16, 32),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -884,6 +883,10 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           )
         : const SizedBox.shrink();
 
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isDesktop = screenWidth >= 1100;
+    final showMiniCart = screenWidth >= 700;
+
     return Stack(
       children: [
         Listener(
@@ -895,7 +898,9 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               final width = constraints.maxWidth;
               final isTablet = width >= 700;
               final isDesktop = width >= 1100;
-              final crossAxisCount = isDesktop ? 3 : (isTablet ? 2 : 1);
+              final showMiniCart = isTablet;
+              final useCompactCards = isTablet && !isDesktop;
+              final crossAxisCount = isDesktop ? 3 : (useCompactCards ? 1 : (isTablet ? 2 : 1));
               final isGrid = crossAxisCount > 1;
 
               return PopScope(
@@ -925,6 +930,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                                       isDesktop,
                                       crossAxisCount,
                                       isGrid,
+                                      useCompactCards,
                                       filteredProducts,
                                       sectionTitle,
                                       menuProvider,
@@ -971,25 +977,21 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           ),
         ),
         screensaverWidget,
-        Positioned(
-          top: 0,
-          right: 0,
-          bottom: 0,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: _showMiniCart
-                ? MiniCartPreview(
-                    key: const ValueKey('mini_cart_preview'),
-                    onClose: () => setState(() => _showMiniCart = false),
-                    onCheckout: () async {
-                      setState(() => _showMiniCart = false);
-                      final cart = context.read<CartProvider>();
-                      await const CartCheckoutService().sendOrder(context, cart);
-                    },
-                  )
-                : const SizedBox.shrink(key: ValueKey('mini_cart_hidden')),
+        if (showMiniCart)
+          Positioned(
+            top: 16,
+            right: 16,
+            bottom: 16,
+            child: SizedBox(
+              width: isDesktop ? 320 : 280,
+              child: MiniCartPreview(
+                onCheckout: () async {
+                  final cart = context.read<CartProvider>();
+                  await const CartCheckoutService().sendOrder(context, cart);
+                },
+              ),
+            ),
           ),
-        ),
         CartPanelBarrier(
           isOpen: _isCartOpen,
           onClose: () => setState(() => _isCartOpen = false),

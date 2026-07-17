@@ -1,4 +1,4 @@
-package com.tachao.tachao_menu
+package com.napoleta.cardapio
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,4 +1,4 @@
-package com.tachao.tachao_menu
+package com.napoleta.cardapio
 
 import android.app.admin.DeviceAdminReceiver
 import android.content.Context
