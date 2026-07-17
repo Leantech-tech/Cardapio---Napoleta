@@ -22,6 +22,7 @@ import '../widgets/barcode_scanner_screen.dart';
 import '../widgets/comanda_viewer_sheet.dart';
 import '../widgets/cart_panel.dart';
 import '../widgets/mini_cart_preview.dart';
+import '../services/cart_checkout_service.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/comanda_service.dart';
 import '../services/kiosk_service.dart';
@@ -980,6 +981,11 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                 ? MiniCartPreview(
                     key: const ValueKey('mini_cart_preview'),
                     onClose: () => setState(() => _showMiniCart = false),
+                    onCheckout: () async {
+                      setState(() => _showMiniCart = false);
+                      final cart = context.read<CartProvider>();
+                      await const CartCheckoutService().sendOrder(context, cart);
+                    },
                   )
                 : const SizedBox.shrink(key: ValueKey('mini_cart_hidden')),
           ),

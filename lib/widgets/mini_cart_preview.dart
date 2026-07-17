@@ -8,10 +8,12 @@ import 'adaptive_image.dart';
 
 class MiniCartPreview extends StatelessWidget {
   final VoidCallback onClose;
+  final VoidCallback onCheckout;
 
   const MiniCartPreview({
     super.key,
     required this.onClose,
+    required this.onCheckout,
   });
 
   String _formatPrice(double price) {
@@ -209,6 +211,26 @@ class MiniCartPreview extends StatelessWidget {
                           color: AppTheme.textPrimary(context),
                         ),
                         textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: onCheckout,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.tachaoRed,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Finalizar pedido',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],

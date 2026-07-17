@@ -117,19 +117,12 @@ class ProductCardGrid extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: AppTheme.inputBg(context),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              product.priceDisplay,
-                              style: GoogleFonts.poppins(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.tachaoRed,
-                              ),
+                          Text(
+                            product.priceDisplay,
+                            style: GoogleFonts.poppins(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.tachaoRed,
                             ),
                           ),
                           Container(
