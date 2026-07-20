@@ -6,12 +6,14 @@ class ProductImage extends StatelessWidget {
   final Product product;
   final BoxFit fit;
   final BorderRadius? borderRadius;
+  final double placeholderSize;
 
   const ProductImage({
     super.key,
     required this.product,
     this.fit = BoxFit.cover,
     this.borderRadius,
+    this.placeholderSize = 40,
   });
 
   static final Map<String, _PlaceholderStyle> _styles = {
@@ -63,21 +65,21 @@ class ProductImage extends StatelessWidget {
     Widget image;
     if (product.imagePath.isEmpty) {
       image = SizedBox.expand(
-        child: _Placeholder(style: style),
+        child: _Placeholder(style: style, iconSize: placeholderSize),
       );
     } else if (product.imagePath.startsWith('http')) {
       image = AdaptiveNetworkImage(
         key: ValueKey(product.imagePath),
         imageUrl: product.imagePath,
         fit: fit,
-        placeholder: (context) => _Placeholder(style: style),
-        errorBuilder: (context, error) => _Placeholder(style: style),
+        placeholder: (context) => _Placeholder(style: style, iconSize: placeholderSize),
+        errorBuilder: (context, error) => _Placeholder(style: style, iconSize: placeholderSize),
       );
     } else {
       image = Image.asset(
         product.imagePath,
         fit: fit,
-        errorBuilder: (context, error, stackTrace) => _Placeholder(style: style),
+        errorBuilder: (context, error, stackTrace) => _Placeholder(style: style, iconSize: placeholderSize),
       );
     }
 
@@ -94,8 +96,9 @@ class ProductImage extends StatelessWidget {
 
 class _Placeholder extends StatelessWidget {
   final _PlaceholderStyle style;
+  final double iconSize;
 
-  const _Placeholder({required this.style});
+  const _Placeholder({required this.style, this.iconSize = 40});
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +108,7 @@ class _Placeholder extends StatelessWidget {
         child: Icon(
           style.icon,
           color: style.iconColor,
-          size: 40,
+          size: iconSize,
         ),
       ),
     );

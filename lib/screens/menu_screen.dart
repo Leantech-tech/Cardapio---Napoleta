@@ -13,6 +13,7 @@ import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/store_status_helper.dart';
+import '../data/api_config.dart';
 import '../widgets/screensaver_carousel.dart';
 import '../widgets/product_card.dart';
 import '../widgets/login_sheet.dart';
@@ -245,7 +246,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
 
     try {
       final service = ComandaService();
-      const empresaId = 7;
+      const empresaId = ApiConfig.empresaId;
 
       final comanda = await service.buscarComanda(numero, empresaId);
 
@@ -762,8 +763,8 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
                         childAspectRatio: availableHeight < 500
-                            ? 0.95
-                            : (useCompactCards ? 0.86 : 0.74),
+                            ? 1.1
+                            : (useCompactCards ? 1.0 : 0.9),
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
                       ),
@@ -979,7 +980,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
         screensaverWidget,
         if (showMiniCart)
           Positioned(
-            top: 16,
+            top: 90,
             right: 16,
             bottom: 16,
             child: SizedBox(

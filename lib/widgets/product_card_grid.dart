@@ -47,26 +47,21 @@ class ProductCardGrid extends StatelessWidget {
                   top: Radius.circular(20),
                 ),
                 child: AspectRatio(
-                  aspectRatio: 1.0,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ProductImage(
-                        product: product,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(20),
-                        ),
-                      ),
-                    ],
+                  aspectRatio: 4 / 3,
+                  child: ProductImage(
+                    product: product,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                    placeholderSize: 56,
                   ),
                 ),
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         product.name,
@@ -79,7 +74,7 @@ class ProductCardGrid extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (product.description.trim().isNotEmpty) ...[
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 4),
                         Text(
                           product.description,
                           style: GoogleFonts.inter(
@@ -91,9 +86,10 @@ class ProductCardGrid extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
+                      const SizedBox(height: 8),
                       if (product.optionGroups.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(top: 4),
+                          padding: const EdgeInsets.only(bottom: 10),
                           child: Row(
                             children: [
                               Icon(
@@ -126,11 +122,11 @@ class ProductCardGrid extends StatelessWidget {
                             ),
                           ),
                           Container(
-                            width: 34,
-                            height: 34,
+                            width: 38,
+                            height: 38,
                             decoration: BoxDecoration(
                               color: AppTheme.tachaoRed,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
                                   color: AppTheme.tachaoRed.withValues(alpha: 0.35),
@@ -142,7 +138,7 @@ class ProductCardGrid extends StatelessWidget {
                             child: const Icon(
                               Icons.add,
                               color: Colors.white,
-                              size: 20,
+                              size: 22,
                             ),
                           ),
                         ],

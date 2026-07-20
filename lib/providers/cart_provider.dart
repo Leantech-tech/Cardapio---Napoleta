@@ -17,13 +17,18 @@ class CartProvider extends ChangeNotifier {
     String? observation,
     Map<String, List<String>> selectedOptions,
     Map<String, double> selectedOptionPrices,
-    double optionsPrice,
-  ) {
+    double optionsPrice, {
+    Map<String, int> selectedOptionQuantities = const {},
+  }) {
     final existingIndex = _items.indexWhere(
       (item) =>
           item.productId == product.id &&
           item.observation == observation &&
-          _selectedOptionsEqual(item.selectedOptions, selectedOptions),
+          _selectedOptionsEqual(item.selectedOptions, selectedOptions) &&
+          _selectedOptionQuantitiesEqual(
+            item.selectedOptionQuantities,
+            selectedOptionQuantities,
+          ),
     );
 
     if (existingIndex >= 0) {
@@ -39,6 +44,7 @@ class CartProvider extends ChangeNotifier {
         observation: observation?.trim().isEmpty == true ? null : observation?.trim(),
         selectedOptions: selectedOptions,
         selectedOptionPrices: selectedOptionPrices,
+        selectedOptionQuantities: selectedOptionQuantities,
         optionsPrice: optionsPrice,
       );
       _items.add(cartItem);
@@ -81,6 +87,18 @@ class CartProvider extends ChangeNotifier {
       for (int i = 0; i < listA.length; i++) {
         if (listA[i] != listB[i]) return false;
       }
+    }
+    return true;
+  }
+
+  bool _selectedOptionQuantitiesEqual(
+    Map<String, int> a,
+    Map<String, int> b,
+  ) {
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (!b.containsKey(key)) return false;
+      if (a[key] != b[key]) return false;
     }
     return true;
   }

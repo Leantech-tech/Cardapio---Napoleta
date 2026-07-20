@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../data/api_config.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../services/comanda_service.dart';
@@ -65,7 +66,7 @@ class CartCheckoutService {
 
     try {
       final service = ComandaService();
-      const empresaId = 7;
+      const empresaId = ApiConfig.empresaId;
 
       var comanda = await service.buscarComanda(numero, empresaId);
       comanda ??= await service.criarComanda(numero, empresaId);

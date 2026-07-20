@@ -8,6 +8,7 @@ class CartItem {
   String? observation;
   final Map<String, List<String>> selectedOptions;
   final Map<String, double> selectedOptionPrices;
+  final Map<String, int> selectedOptionQuantities;
   final double optionsPrice;
 
   CartItem({
@@ -20,6 +21,7 @@ class CartItem {
     this.observation,
     this.selectedOptions = const {},
     this.selectedOptionPrices = const {},
+    this.selectedOptionQuantities = const {},
     this.optionsPrice = 0.0,
   });
 
@@ -35,10 +37,18 @@ class CartItem {
   /// Retorna o nome de exibição das opções selecionadas
   String get selectedOptionsDisplay {
     if (selectedOptions.isEmpty) return '';
-    return selectedOptions.values
-        .expand((list) => list)
-        .toList()
-        .join(' / ');
+    final parts = <String>[];
+    for (final groupEntry in selectedOptions.entries) {
+      for (final optionId in groupEntry.value) {
+        final qty = selectedOptionQuantities[optionId] ?? 1;
+        if (qty > 1) {
+          parts.add('$optionId x$qty');
+        } else {
+          parts.add(optionId);
+        }
+      }
+    }
+    return parts.join(' / ');
   }
 
   /// Retorna o preço de um optionId específico

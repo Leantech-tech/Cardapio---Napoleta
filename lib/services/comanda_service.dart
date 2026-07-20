@@ -58,10 +58,11 @@ class ComandaService {
         for (final entry in item.selectedOptions.entries) {
           for (final optionId in entry.value) {
             final vrAdicional = item.selectedOptionPrices[optionId] ?? 0.0;
+            final qty = item.selectedOptionQuantities[optionId] ?? 1;
             modificadores.add({
               'comanda_item_id': comandaItemId,
               'grupo_modificador_item_id': int.tryParse(optionId) ?? 0,
-              'quantidade': 1,
+              'quantidade': qty,
               'vr_adicional': vrAdicional,
               'created_at': DateTime.now().toIso8601String(),
             });

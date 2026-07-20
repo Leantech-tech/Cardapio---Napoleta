@@ -26,9 +26,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   bool _added = false;
   late Map<String, List<String>> _selectedOptions;
   late Map<String, double> _selectedOptionPrices;
+  late Map<String, int> _selectedOptionQuantities;
 
   double get _totalOptionsPrice {
-    return _selectedOptionPrices.values.fold(0.0, (sum, p) => sum + p);
+    return _selectedOptionQuantities.entries.fold(0.0, (sum, entry) {
+      final price = _selectedOptionPrices[entry.key] ?? 0.0;
+      return sum + price * entry.value;
+    });
   }
 
   double get total => (widget.product.price + _totalOptionsPrice) * quantity;
@@ -38,14 +42,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     super.initState();
     _selectedOptions = {};
     _selectedOptionPrices = {};
+    _selectedOptionQuantities = {};
     for (final group in widget.product.optionGroups) {
       if (group.options.isNotEmpty) {
         if (group.isSingleChoice) {
           final first = group.options.first;
           _selectedOptions[group.id] = [first.id];
           _selectedOptionPrices[first.id] = first.priceModifier;
+          _selectedOptionQuantities[first.id] = 1;
         } else {
           _selectedOptions[group.id] = [];
+          for (final option in group.options) {
+            _selectedOptionQuantities[option.id] = 0;
+          }
         }
       }
     }
@@ -69,14 +78,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     for (final group in widget.product.optionGroups) {
       final effectiveMax = _effectiveQtdMax(group);
       final currentList = _selectedOptions[group.id] ?? [];
-      if (currentList.length > effectiveMax) {
-        final toRemove = currentList.sublist(effectiveMax);
-        for (final id in toRemove) {
-          _selectedOptionPrices.remove(id);
+
+      while (_totalSelectedQuantity(group) > effectiveMax && currentList.isNotEmpty) {
+        final lastId = currentList.last;
+        final qty = _selectedOptionQuantities[lastId] ?? 1;
+        if (qty > 1) {
+          _selectedOptionQuantities[lastId] = qty - 1;
+        } else {
+          currentList.remove(lastId);
+          _selectedOptionQuantities.remove(lastId);
+          _selectedOptionPrices.remove(lastId);
         }
-        _selectedOptions[group.id] = currentList.sublist(0, effectiveMax);
       }
+      _selectedOptions[group.id] = List.from(currentList);
     }
+  }
+
+  int _totalSelectedQuantity(ProductOptionGroup group) {
+    final selectedIds = _selectedOptions[group.id] ?? [];
+    return selectedIds.fold<int>(
+      0,
+      (sum, id) => sum + (_selectedOptionQuantities[id] ?? 1),
+    );
   }
 
   bool _isEffectivelyMultipleChoice(ProductOptionGroup group) {
@@ -91,20 +114,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
       if (!isMulti) {
         if (currentList.isNotEmpty) {
-          _selectedOptionPrices.remove(currentList.first);
+          final previousId = currentList.first;
+          _selectedOptionPrices.remove(previousId);
+          _selectedOptionQuantities.remove(previousId);
         }
         _selectedOptions[group.id] = [option.id];
         _selectedOptionPrices[option.id] = option.priceModifier;
+        _selectedOptionQuantities[option.id] = 1;
       } else {
         if (currentList.contains(option.id)) {
-          if (currentList.length > group.qtdMin) {
-            currentList.remove(option.id);
-            _selectedOptionPrices.remove(option.id);
-          }
+          currentList.remove(option.id);
+          _selectedOptionPrices.remove(option.id);
+          _selectedOptionQuantities.remove(option.id);
         } else {
-          if (currentList.length < effectiveMax) {
+          if (_totalSelectedQuantity(group) < effectiveMax) {
             currentList.add(option.id);
+            _selectedOptions[group.id] = List.from(currentList);
             _selectedOptionPrices[option.id] = option.priceModifier;
+            _selectedOptionQuantities[option.id] = 1;
           }
         }
         _selectedOptions[group.id] = List.from(currentList);
@@ -124,11 +151,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     for (final group in widget.product.optionGroups) {
       final selectedIds = _selectedOptions[group.id] ?? [];
       for (final id in selectedIds) {
+        final qty = _selectedOptionQuantities[id] ?? 1;
         final option = group.options.firstWhere(
           (o) => o.id == id,
           orElse: () => ProductOption(id: '', name: ''),
         );
-        if (option.name.isNotEmpty) parts.add(option.name);
+        if (option.name.isEmpty) continue;
+        if (qty > 1) {
+          parts.add('${option.name} x$qty');
+        } else {
+          parts.add(option.name);
+        }
       }
     }
     return parts.join(' / ');
@@ -136,7 +169,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
   bool _canAddToCart() {
     for (final group in widget.product.optionGroups) {
-      final selectedCount = (_selectedOptions[group.id] ?? []).length;
+      final selectedCount = _totalSelectedQuantity(group);
       final effectiveMax = _effectiveQtdMax(group);
       if (group.isObrigatorio && selectedCount < group.qtdMin) {
         return false;
@@ -153,16 +186,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
   String? _validationMessage() {
     for (final group in widget.product.optionGroups) {
-      final selectedCount = (_selectedOptions[group.id] ?? []).length;
+      final selectedCount = _totalSelectedQuantity(group);
       final effectiveMax = _effectiveQtdMax(group);
       if (group.isObrigatorio && selectedCount < group.qtdMin) {
-        return 'Selecione pelo menos ${group.qtdMin} opção(ões) em "${group.name}"';
+        return 'Selecione pelo menos ${group.qtdMin} unidade(s) em "${group.name}"';
       }
       if (selectedCount < group.qtdMin) {
-        return 'Selecione pelo menos ${group.qtdMin} opção(ões) em "${group.name}"';
+        return 'Selecione pelo menos ${group.qtdMin} unidade(s) em "${group.name}"';
       }
       if (selectedCount > effectiveMax) {
-        return 'Selecione no máximo $effectiveMax opção(ões) em "${group.name}"';
+        return 'Selecione no máximo $effectiveMax unidade(s) em "${group.name}"';
       }
     }
     return null;
@@ -200,6 +233,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
       _selectedOptions,
       _selectedOptionPrices,
       _totalOptionsPrice,
+      selectedOptionQuantities: _selectedOptionQuantities,
     );
 
     setState(() => _added = true);
@@ -530,6 +564,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildSectionTitle(context, 'Modificadores'),
+        const SizedBox(height: 12),
         ...widget.product.optionGroups.map((group) {
           final selectedCount = (_selectedOptions[group.id] ?? []).length;
           final effectiveMax = _effectiveQtdMax(group);
@@ -569,117 +605,228 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         ),
                       ),
                       if (group.qtdMin > 0 || effectiveMax > 1)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isValid
-                                ? Colors.green.withValues(alpha: 0.1)
-                                : Colors.orange.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            group.qtdMin == effectiveMax
-                                ? 'Escolha ${group.qtdMin}'
-                                : group.qtdMin > 0
-                                    ? 'Min ${group.qtdMin} / Max $effectiveMax'
-                                    : 'Max $effectiveMax',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isValid
-                                  ? Colors.green[700]
-                                  : Colors.orange[700],
-                            ),
-                          ),
+                        _buildGroupBadge(
+                          group: group,
+                          isValid: isValid,
+                          effectiveMax: effectiveMax,
                         ),
                     ],
                   ),
                 if (!isBolas) const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: group.options.map((option) {
-                    final isSelected = _isSelected(group, option);
-                    return GestureDetector(
-                      onTap: () => _toggleOption(group, option),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTheme.tachaoRed
-                              : AppTheme.inputBg(context),
-                          borderRadius: BorderRadius.circular(14),
-                          border: isSelected
-                              ? null
-                              : Border.all(
-                                  color: AppTheme.border(context),
-                                ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (_isEffectivelyMultipleChoice(group))
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: Icon(
-                                  isSelected
-                                      ? Icons.check_box
-                                      : Icons.check_box_outline_blank,
-                                  size: 18,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppTheme.textSecondary(context),
-                                ),
-                              ),
-                            Flexible(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    option.name,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.w500,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : AppTheme.textPrimary(context),
-                                    ),
-                                  ),
-                                  if (option.priceModifier > 0)
-                                    Text(
-                                      '+ ${option.priceModifier.toStringAsFixed(2).replaceAll('.', ',')}',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        color: isSelected
-                                            ? Colors.white.withValues(alpha: 0.9)
-                                            : AppTheme.textSecondary(context),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                ...group.options.map((option) {
+                  return _buildOptionRow(context, group, option);
+                }),
               ],
             ),
           );
         }),
       ],
     );
+  }
+
+  Widget _buildGroupBadge({
+    required ProductOptionGroup group,
+    required bool isValid,
+    required int effectiveMax,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: isValid
+            ? Colors.green.withValues(alpha: 0.1)
+            : Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        group.qtdMin == effectiveMax
+            ? 'Escolha ${group.qtdMin}'
+            : group.qtdMin > 0
+                ? 'Min ${group.qtdMin} / Max $effectiveMax'
+                : 'Max $effectiveMax',
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: isValid ? Colors.green[700] : Colors.orange[700],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionRow(
+    BuildContext context,
+    ProductOptionGroup group,
+    ProductOption option,
+  ) {
+    final isSelected = _isSelected(group, option);
+    final isMultiple = _isEffectivelyMultipleChoice(group);
+    final qty = _selectedOptionQuantities[option.id] ?? 0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.tachaoRed.withValues(alpha: 0.08)
+              : AppTheme.inputBg(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppTheme.tachaoRed : AppTheme.border(context),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _toggleOption(group, option),
+                behavior: HitTestBehavior.translucent,
+                child: Row(
+                  children: [
+                    _buildSelectionIndicator(isSelected, isMultiple),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        option.name,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected
+                              ? AppTheme.tachaoRed
+                              : AppTheme.textPrimary(context),
+                        ),
+                      ),
+                    ),
+                    if (!isSelected && option.priceModifier > 0)
+                      Text(
+                        '+ R\$ ${option.priceModifier.toStringAsFixed(2).replaceAll('.', ',')}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textSecondary(context),
+                        ),
+                      ),
+                    if (isSelected && !isMultiple && option.priceModifier > 0)
+                      Text(
+                        '+ R\$ ${(option.priceModifier * qty).toStringAsFixed(2).replaceAll('.', ',')}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.tachaoRed,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            if (isSelected && isMultiple)
+              Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: _buildQtyStepper(group, option),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectionIndicator(bool isSelected, bool isMultiple) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        color: isSelected ? AppTheme.tachaoRed : Colors.transparent,
+        borderRadius: BorderRadius.circular(isMultiple ? 6 : 11),
+        border: Border.all(
+          color: isSelected ? AppTheme.tachaoRed : AppTheme.textSecondary(context),
+          width: 1.5,
+        ),
+      ),
+      child: isSelected
+          ? const Icon(
+              Icons.check,
+              size: 14,
+              color: Colors.white,
+            )
+          : null,
+    );
+  }
+
+  Widget _buildQtyStepper(ProductOptionGroup group, ProductOption option) {
+    final qty = _selectedOptionQuantities[option.id] ?? 1;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.inputBg(context),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.border(context)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: () => _decrementOptionQuantity(group, option),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              child: Icon(
+                Icons.remove,
+                size: 16,
+                color: AppTheme.tachaoRed,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              '$qty',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary(context),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => _incrementOptionQuantity(group, option),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              child: Icon(
+                Icons.add,
+                size: 16,
+                color: AppTheme.tachaoRed,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _incrementOptionQuantity(ProductOptionGroup group, ProductOption option) {
+    final effectiveMax = _effectiveQtdMax(group);
+    if (_totalSelectedQuantity(group) < effectiveMax) {
+      setState(() {
+        _selectedOptionQuantities[option.id] =
+            (_selectedOptionQuantities[option.id] ?? 1) + 1;
+      });
+    }
+  }
+
+  void _decrementOptionQuantity(ProductOptionGroup group, ProductOption option) {
+    setState(() {
+      final qty = _selectedOptionQuantities[option.id] ?? 1;
+      if (qty > 1) {
+        _selectedOptionQuantities[option.id] = qty - 1;
+      } else {
+        final currentList = _selectedOptions[group.id] ?? [];
+        currentList.remove(option.id);
+        _selectedOptions[group.id] = List.from(currentList);
+        _selectedOptionPrices.remove(option.id);
+        _selectedOptionQuantities.remove(option.id);
+      }
+    });
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {

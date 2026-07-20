@@ -6,7 +6,7 @@
 -- Agrupa as opções de modificadores/adicionais
 CREATE TABLE IF NOT EXISTS grupo_modificador (
   id BIGSERIAL PRIMARY KEY,
-  empresa_id SMALLINT NOT NULL DEFAULT 7,
+  empresa_id SMALLINT NOT NULL DEFAULT 9,
   nome VARCHAR(100) NOT NULL,
   tipo VARCHAR(20) NOT NULL DEFAULT 'MODIFICADOR' CHECK (tipo IN ('MODIFICADOR', 'ADICIONAL')),
   qtd_min INTEGER NOT NULL DEFAULT 1,
