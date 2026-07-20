@@ -12,7 +12,6 @@ import '../providers/menu_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
-import '../utils/store_status_helper.dart';
 import '../data/api_config.dart';
 import '../widgets/screensaver_carousel.dart';
 import '../widgets/product_card.dart';
@@ -427,62 +426,6 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildStatusChip(BuildContext context, bool isTablet) {
-    final storeStatus = StoreStatusHelper.checkStatus(DateTime.now());
-
-    final Color bgColor;
-    final Color borderColor;
-    final Color textColor;
-    final Color dotColor;
-    final IconData icon;
-
-    if (storeStatus.isOpen) {
-      if (storeStatus.isClosingSoon) {
-        bgColor = const Color(0xFFFFF8E1);
-        borderColor = const Color(0xFFFFB300);
-        textColor = const Color(0xFFE65100);
-        dotColor = const Color(0xFFFFB300);
-        icon = Icons.access_time;
-      } else {
-        bgColor = const Color(0xFFE8F5E9);
-        borderColor = const Color(0xFF4CAF50);
-        textColor = const Color(0xFF2E7D32);
-        dotColor = const Color(0xFF4CAF50);
-        icon = Icons.check_circle;
-      }
-    } else {
-      bgColor = const Color(0xFFFFEBEE);
-      borderColor = const Color(0xFFE31E24);
-      textColor = const Color(0xFFB71C1C);
-      dotColor = const Color(0xFFE31E24);
-      icon = Icons.cancel;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: dotColor),
-          const SizedBox(width: 6),
-          Text(
-            '${storeStatus.statusText} • ${storeStatus.nextChangeText}',
-            style: GoogleFonts.inter(
-              fontSize: isTablet ? 12 : 11,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildHeader(
     BuildContext context,
     bool isTablet,
@@ -528,8 +471,6 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     color: AppTheme.textPrimary(context),
                   ),
                 ),
-                const SizedBox(height: 4),
-                _buildStatusChip(context, isTablet),
               ],
             ),
           ),
