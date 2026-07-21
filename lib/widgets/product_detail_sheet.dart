@@ -183,7 +183,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           '${widget.product.name} (x$quantity) adicionado ao carrinho!',
           style: GoogleFonts.inter(fontWeight: FontWeight.w500),
         ),
-        backgroundColor: AppTheme.tachaoRed,
+        backgroundColor: AppTheme.brandPurple,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -295,7 +295,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.tachaoRed,
+                      color: AppTheme.brandPurple,
                     ),
                   ),
                   if (hasOptions)
@@ -401,7 +401,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? AppTheme.tachaoRed
+                                        ? AppTheme.brandPurple
                                         : AppTheme.inputBg(context),
                                     borderRadius: BorderRadius.circular(12),
                                     border: isSelected
@@ -597,7 +597,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               child: ElevatedButton(
                 onPressed: canAdd ? _addToCart : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.tachaoRed,
+                  backgroundColor: AppTheme.brandPurple,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 54),
                   shape: RoundedRectangleBorder(
@@ -650,7 +650,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
         padding: const EdgeInsets.all(10),
         child: Icon(
           icon,
-          color: AppTheme.tachaoRed,
+          color: AppTheme.brandPurple,
           size: 20,
         ),
       ),

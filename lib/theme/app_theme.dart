@@ -3,11 +3,21 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Brand Colors - Napoleta palette
-  static const Color tachaoRed = Color(0xFF7B1FA2);
-  static const Color tachaoRedDark = Color(0xFF4A148C);
+  static const Color brandPurple = Color(0xFF7B1FA2);
+  static const Color brandPurpleDark = Color(0xFF4A148C);
   static const Color brandGreen = Color(0xFF00A650);
   static const Color brandYellow = Color(0xFFFFD600);
   static const Color honeyGold = Color(0xFFFFD600);
+
+  // Typography scale
+  static const double fontSizeXs = 11.0;
+  static const double fontSizeSm = 13.0;
+  static const double fontSizeMd = 14.0;
+  static const double fontSizeLg = 16.0;
+  static const double fontSizeXl = 18.0;
+  static const double fontSize2Xl = 20.0;
+  static const double fontSize3Xl = 22.0;
+  static const double fontSize4Xl = 28.0;
 
   // Light theme specific
   static const Color darkText = Color(0xFF1A1A1A);
@@ -57,10 +67,10 @@ class AppTheme {
 
   static ThemeData get _baseTheme => ThemeData(
         useMaterial3: true,
-        primaryColor: tachaoRed,
+        primaryColor: brandPurple,
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: tachaoRed,
+            backgroundColor: brandPurple,
             foregroundColor: Colors.white,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
@@ -79,8 +89,8 @@ class AppTheme {
         brightness: Brightness.light,
         scaffoldBackgroundColor: softBackground,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: tachaoRed,
-          primary: tachaoRed,
+          seedColor: brandPurple,
+          primary: brandPurple,
           secondary: honeyGold,
           surface: Colors.white,
           brightness: Brightness.light,
@@ -97,44 +107,44 @@ class AppTheme {
         ),
         textTheme: TextTheme(
           displayLarge: GoogleFonts.poppins(
-            fontSize: 28,
+            fontSize: fontSize4Xl,
             fontWeight: FontWeight.w700,
             color: darkText,
           ),
           displayMedium: GoogleFonts.poppins(
-            fontSize: 22,
+            fontSize: fontSize3Xl,
             fontWeight: FontWeight.w700,
             color: darkText,
           ),
           titleLarge: GoogleFonts.poppins(
-            fontSize: 18,
+            fontSize: fontSizeXl,
             fontWeight: FontWeight.w600,
             color: darkText,
           ),
           titleMedium: GoogleFonts.poppins(
-            fontSize: 16,
+            fontSize: fontSizeLg,
             fontWeight: FontWeight.w600,
             color: darkText,
           ),
           bodyLarge: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: fontSizeLg,
             fontWeight: FontWeight.w400,
             color: darkText,
           ),
           bodyMedium: GoogleFonts.inter(
-            fontSize: 14,
+            fontSize: fontSizeMd,
             fontWeight: FontWeight.w400,
             color: greyText,
           ),
           bodySmall: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: fontSizeSm,
             fontWeight: FontWeight.w400,
             color: greyText,
           ),
         ),
         chipTheme: ChipThemeData(
           backgroundColor: lightGrey,
-          selectedColor: tachaoRed,
+          selectedColor: brandPurple,
           labelStyle: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w500,
@@ -157,8 +167,8 @@ class AppTheme {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: darkBackground,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: tachaoRed,
-          primary: tachaoRed,
+          seedColor: brandPurple,
+          primary: brandPurple,
           secondary: honeyGold,
           surface: darkSurface,
           brightness: Brightness.dark,
@@ -175,44 +185,44 @@ class AppTheme {
         ),
         textTheme: TextTheme(
           displayLarge: GoogleFonts.poppins(
-            fontSize: 28,
+            fontSize: fontSize4Xl,
             fontWeight: FontWeight.w700,
             color: darkTextPrimary,
           ),
           displayMedium: GoogleFonts.poppins(
-            fontSize: 22,
+            fontSize: fontSize3Xl,
             fontWeight: FontWeight.w700,
             color: darkTextPrimary,
           ),
           titleLarge: GoogleFonts.poppins(
-            fontSize: 18,
+            fontSize: fontSizeXl,
             fontWeight: FontWeight.w600,
             color: darkTextPrimary,
           ),
           titleMedium: GoogleFonts.poppins(
-            fontSize: 16,
+            fontSize: fontSizeLg,
             fontWeight: FontWeight.w600,
             color: darkTextPrimary,
           ),
           bodyLarge: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: fontSizeLg,
             fontWeight: FontWeight.w400,
             color: darkTextPrimary,
           ),
           bodyMedium: GoogleFonts.inter(
-            fontSize: 14,
+            fontSize: fontSizeMd,
             fontWeight: FontWeight.w400,
             color: darkTextSecondary,
           ),
           bodySmall: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: fontSizeSm,
             fontWeight: FontWeight.w400,
             color: darkTextSecondary,
           ),
         ),
         chipTheme: ChipThemeData(
           backgroundColor: darkInputBg,
-          selectedColor: tachaoRed,
+          selectedColor: brandPurple,
           labelStyle: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w500,

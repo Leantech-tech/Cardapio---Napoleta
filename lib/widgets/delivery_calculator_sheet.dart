@@ -113,7 +113,7 @@ class _DeliveryCalculatorSheetState extends State<DeliveryCalculatorSheet> {
             child: ElevatedButton(
               onPressed: delivery.isCalculating ? null : _calculate,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.tachaoRed,
+                backgroundColor: AppTheme.brandPurple,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 52),
                 shape: RoundedRectangleBorder(
@@ -173,7 +173,7 @@ class _DeliveryCalculatorSheetState extends State<DeliveryCalculatorSheet> {
                     children: [
                       const Icon(
                         Icons.local_shipping_outlined,
-                        color: AppTheme.tachaoRed,
+                        color: AppTheme.brandPurple,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -190,7 +190,7 @@ class _DeliveryCalculatorSheetState extends State<DeliveryCalculatorSheet> {
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.tachaoRed,
+                          color: AppTheme.brandPurple,
                         ),
                       ),
                     ],

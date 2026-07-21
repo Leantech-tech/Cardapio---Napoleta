@@ -91,7 +91,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
         imagePath,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => Container(
-          color: AppTheme.tachaoRed,
+          color: AppTheme.brandPurple,
           child: const Center(
             child: Icon(
               Icons.image_not_supported,
@@ -107,7 +107,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
       imagePath,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => Container(
-        color: AppTheme.tachaoRed,
+        color: AppTheme.brandPurple,
         child: const Center(
           child: Icon(
             Icons.image_not_supported,

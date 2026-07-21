@@ -75,7 +75,7 @@ class ProductCard extends StatelessWidget {
                       Text(
                         product.name,
                         style: GoogleFonts.poppins(
-                          fontSize: 17,
+                          fontSize: AppTheme.fontSizeXl,
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textPrimary(context),
                         ),
@@ -86,7 +86,7 @@ class ProductCard extends StatelessWidget {
                       Text(
                         product.description,
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: AppTheme.fontSizeSm,
                           color: AppTheme.textSecondary(context),
                           height: 1.4,
                         ),
@@ -100,15 +100,15 @@ class ProductCard extends StatelessWidget {
                             children: [
                               Icon(
                                 Icons.tune,
-                                size: 12,
-                                color: AppTheme.tachaoRed.withValues(alpha: 0.8),
+                                size: 14,
+                                color: AppTheme.brandPurple.withValues(alpha: 0.8),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'Personalizável',
                                 style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  color: AppTheme.tachaoRed.withValues(alpha: 0.8),
+                                  fontSize: AppTheme.fontSizeXs,
+                                  color: AppTheme.brandPurple.withValues(alpha: 0.8),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -123,20 +123,20 @@ class ProductCard extends StatelessWidget {
                           Text(
                             product.priceDisplay,
                             style: GoogleFonts.poppins(
-                              fontSize: 20,
+                              fontSize: AppTheme.fontSize2Xl,
                               fontWeight: FontWeight.w800,
-                              color: AppTheme.tachaoRed,
+                              color: AppTheme.brandPurple,
                             ),
                           ),
                           Container(
-                            width: 36,
-                            height: 36,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              color: AppTheme.tachaoRed,
+                              color: AppTheme.brandPurple,
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.tachaoRed.withValues(alpha: 0.35),
+                                  color: AppTheme.brandPurple.withValues(alpha: 0.35),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -145,7 +145,7 @@ class ProductCard extends StatelessWidget {
                             child: const Icon(
                               Icons.add,
                               color: Colors.white,
-                              size: 20,
+                              size: 22,
                             ),
                           ),
                         ],

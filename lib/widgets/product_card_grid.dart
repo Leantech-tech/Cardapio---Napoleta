@@ -94,15 +94,15 @@ class ProductCardGrid extends StatelessWidget {
                             children: [
                               Icon(
                                 Icons.tune,
-                                size: 12,
-                                color: AppTheme.tachaoRed.withValues(alpha: 0.8),
+                                size: 14,
+                                color: AppTheme.brandPurple.withValues(alpha: 0.8),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'Personalizável',
                                 style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  color: AppTheme.tachaoRed.withValues(alpha: 0.8),
+                                  fontSize: AppTheme.fontSizeXs,
+                                  color: AppTheme.brandPurple.withValues(alpha: 0.8),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -116,20 +116,20 @@ class ProductCardGrid extends StatelessWidget {
                           Text(
                             product.priceDisplay,
                             style: GoogleFonts.poppins(
-                              fontSize: 19,
+                              fontSize: AppTheme.fontSize2Xl,
                               fontWeight: FontWeight.w800,
-                              color: AppTheme.tachaoRed,
+                              color: AppTheme.brandPurple,
                             ),
                           ),
                           Container(
-                            width: 38,
-                            height: 38,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              color: AppTheme.tachaoRed,
+                              color: AppTheme.brandPurple,
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.tachaoRed.withValues(alpha: 0.35),
+                                  color: AppTheme.brandPurple.withValues(alpha: 0.35),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),

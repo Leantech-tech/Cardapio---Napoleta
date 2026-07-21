@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 
 class AppConfigSheet extends StatefulWidget {
@@ -13,11 +14,17 @@ class AppConfigSheet extends StatefulWidget {
 
 class _AppConfigSheetState extends State<AppConfigSheet> {
   final _addressController = TextEditingController();
+  late bool _useComanda;
+  late bool _isDarkMode;
 
   @override
   void initState() {
     super.initState();
-    _addressController.text = context.read<AuthProvider>().storeAddress;
+    final authProvider = context.read<AuthProvider>();
+    final themeProvider = context.read<ThemeProvider>();
+    _addressController.text = authProvider.storeAddress;
+    _useComanda = authProvider.useComandaFeature;
+    _isDarkMode = themeProvider.isDarkMode;
   }
 
   @override
@@ -26,11 +33,116 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
     super.dispose();
   }
 
+  Future<void> _saveAndClose() async {
+    final authProvider = context.read<AuthProvider>();
+    final themeProvider = context.read<ThemeProvider>();
+
+    await authProvider.setUseComandaFeature(_useComanda);
+    await authProvider.setStoreAddress(_addressController.text);
+    await themeProvider.setDarkMode(_isDarkMode);
+
+    if (!mounted) return;
+
+    Navigator.pop(context);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Configurações salvas',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: AppTheme.brandPurple,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: AppTheme.fontSizeLg,
+        fontWeight: FontWeight.w600,
+        color: AppTheme.textPrimary(context),
+      ),
+    );
+  }
+
+  Widget _buildSectionDescription(BuildContext context, String description) {
+    return Text(
+      description,
+      style: GoogleFonts.inter(
+        fontSize: AppTheme.fontSizeSm,
+        color: AppTheme.textSecondary(context),
+        height: 1.4,
+      ),
+    );
+  }
+
+  Widget _buildCard({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required Widget control,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.inputBg(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border(context)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.brandPurple.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppTheme.brandPurple, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: AppTheme.fontSizeMd,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary(context),
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: AppTheme.fontSizeSm,
+                      color: AppTheme.textSecondary(context),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          control,
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final useComanda = authProvider.useComandaFeature;
-
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -57,96 +169,75 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
           Text(
             'Configurações',
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: AppTheme.fontSizeXl,
               fontWeight: FontWeight.w700,
               color: AppTheme.textPrimary(context),
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            'Controle o acesso às comandas no cardápio.',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppTheme.textSecondary(context),
-              height: 1.4,
+          _buildSectionDescription(
+            context,
+            'Controle o acesso às comandas, endereço da loja e aparência do cardápio.',
+          ),
+          const SizedBox(height: 20),
+          _buildCard(
+            context: context,
+            icon: Icons.receipt_long_outlined,
+            title: 'Usar comandas',
+            subtitle: _useComanda
+                ? 'Os pedidos serão vinculados a uma comanda.'
+                : 'Os pedidos serão enviados automaticamente pelo WhatsApp.',
+            control: Switch(
+              value: _useComanda,
+              onChanged: (value) => setState(() => _useComanda = value),
+              activeThumbColor: AppTheme.brandPurple,
             ),
           ),
-          const SizedBox(height: 12),
-          CheckboxListTile(
-            value: useComanda,
-            onChanged: (value) async {
-              if (value != null) {
-                await authProvider.setUseComandaFeature(value);
-              }
-            },
-            title: Text(
-              'Usar funcionalidade de comandas',
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary(context),
-              ),
+          _buildCard(
+            context: context,
+            icon: Icons.dark_mode_outlined,
+            title: 'Tema escuro',
+            subtitle: 'Muda a aparência do cardápio entre claro e escuro.',
+            control: Switch(
+              value: _isDarkMode,
+              onChanged: (value) => setState(() => _isDarkMode = value),
+              activeThumbColor: AppTheme.brandPurple,
             ),
-            subtitle: Text(
-              useComanda
-                  ? 'Os pedidos serão vinculados a uma comanda.'
-                  : 'Os pedidos serão enviados automaticamente pelo WhatsApp.',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppTheme.textSecondary(context),
-                height: 1.4,
-              ),
-            ),
-            activeColor: AppTheme.tachaoRed,
-            contentPadding: EdgeInsets.zero,
-            controlAffinity: ListTileControlAffinity.leading,
           ),
           const SizedBox(height: 8),
-          Text(
-            'Endereço da loja',
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary(context),
-            ),
-          ),
+          _buildSectionTitle(context, 'Endereço da loja'),
           const SizedBox(height: 6),
-          Text(
+          _buildSectionDescription(
+            context,
             'Exibido na mensagem do pedido para clientes que desejam retirar na loja.',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppTheme.textSecondary(context),
-              height: 1.4,
-            ),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _addressController,
-            onChanged: (value) => authProvider.setStoreAddress(value),
             decoration: InputDecoration(
               hintText: 'Ex: Rua das Palmeiras, 123 - Centro',
               hintStyle: GoogleFonts.inter(
-                fontSize: 13,
+                fontSize: AppTheme.fontSizeSm,
                 color: Colors.grey[400],
               ),
               filled: true,
               fillColor: AppTheme.inputBg(context),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.all(14),
             ),
             maxLines: 2,
-            style: GoogleFonts.inter(fontSize: 14),
+            style: GoogleFonts.inter(fontSize: AppTheme.fontSizeMd),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: _saveAndClose,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.tachaoRed,
+                backgroundColor: AppTheme.brandPurple,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 52),
                 shape: RoundedRectangleBorder(
@@ -157,7 +248,7 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
               child: Text(
                 'Concluir',
                 style: GoogleFonts.poppins(
-                  fontSize: 15,
+                  fontSize: AppTheme.fontSizeMd,
                   fontWeight: FontWeight.w600,
                 ),
               ),

@@ -9,7 +9,6 @@ import '../models/category.dart';
 import '../models/product.dart';
 import '../providers/cart_provider.dart';
 import '../providers/menu_provider.dart';
-import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../data/api_config.dart';
@@ -239,7 +238,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(
-        child: CircularProgressIndicator(color: AppTheme.tachaoRed),
+        child: CircularProgressIndicator(color: AppTheme.brandPurple),
       ),
     );
 
@@ -339,7 +338,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
             children: [
               if (authProvider.isLoggedIn)
                 ListTile(
-                  leading: const Icon(Icons.settings_outlined, color: AppTheme.tachaoRed),
+                  leading: const Icon(Icons.settings_outlined, color: AppTheme.brandPurple),
                   title: Text(
                     'Configurações',
                     style: GoogleFonts.inter(fontWeight: FontWeight.w600),
@@ -361,7 +360,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               const Divider(),
               if (!authProvider.isLoggedIn)
                 ListTile(
-                  leading: const Icon(Icons.login, color: AppTheme.tachaoRed),
+                  leading: const Icon(Icons.login, color: AppTheme.brandPurple),
                   title: Text(
                     'Login do Garçom',
                     style: GoogleFonts.inter(fontWeight: FontWeight.w600),
@@ -387,7 +386,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Você saiu.', style: GoogleFonts.inter(fontSize: 14)),
-                        backgroundColor: AppTheme.tachaoRed,
+                        backgroundColor: AppTheme.brandPurple,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -484,7 +483,6 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   color: AppTheme.textSecondary(context),
                 ),
                 tooltip: 'Configurações',
-                visualDensity: VisualDensity.compact,
               ),
               if (authProvider.useComandaFeature)
                 IconButton(
@@ -494,19 +492,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     color: AppTheme.textSecondary(context),
                   ),
                   tooltip: 'Consultar Comanda',
-                  visualDensity: VisualDensity.compact,
                 ),
-              IconButton(
-                onPressed: () => context.read<ThemeProvider>().toggleTheme(),
-                icon: Icon(
-                  AppTheme.isDark(context)
-                      ? Icons.wb_sunny_outlined
-                      : Icons.dark_mode_outlined,
-                  color: AppTheme.textSecondary(context),
-                ),
-                tooltip: 'Alternar tema',
-                visualDensity: VisualDensity.compact,
-              ),
             ],
           ),
         ],
@@ -519,11 +505,11 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     bool isTablet,
     List<Category> categories,
   ) {
-    final sidebarWidth = isTablet ? 140.0 : 100.0;
+    final sidebarWidth = isTablet ? 160.0 : 120.0;
 
     return Container(
       width: sidebarWidth,
-      margin: const EdgeInsets.only(right: 8),
+      margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
         color: AppTheme.surface(context),
         borderRadius: BorderRadius.only(
@@ -544,29 +530,29 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           bottomRight: Radius.circular(isTablet ? 20 : 16),
         ),
         child: ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
           itemCount: categories.length,
           itemBuilder: (context, index) {
             final category = categories[index];
             final isSelected = category.id == selectedCategoryId;
             return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 12),
               child: GestureDetector(
                 onTap: () => setState(() => selectedCategoryId = category.id),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeInOut,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.tachaoRed : AppTheme.inputBg(context),
-                    borderRadius: BorderRadius.circular(14),
+                    color: isSelected ? AppTheme.brandPurple : AppTheme.inputBg(context),
+                    borderRadius: BorderRadius.circular(16),
                     border: isSelected
                         ? null
                         : Border.all(color: AppTheme.border(context)),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: AppTheme.tachaoRed.withValues(alpha: 0.35),
+                              color: AppTheme.brandPurple.withValues(alpha: 0.35),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -578,14 +564,14 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     children: [
                       Icon(
                         category.icon,
-                        size: isTablet ? 30 : 24,
-                        color: isSelected ? Colors.white : AppTheme.tachaoRed,
+                        size: isTablet ? 34 : 28,
+                        color: isSelected ? Colors.white : AppTheme.brandPurple,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Text(
                         category.displayName,
                         style: GoogleFonts.inter(
-                          fontSize: isTablet ? 12 : 10,
+                          fontSize: isTablet ? 14 : 12,
                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                           color: isSelected ? Colors.white : AppTheme.textPrimary(context),
                         ),
@@ -634,7 +620,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
           child: RefreshIndicator(
             onRefresh: () async => menuProvider.refresh(),
-            color: AppTheme.tachaoRed,
+            color: AppTheme.brandPurple,
             backgroundColor: AppTheme.surface(context),
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -676,24 +662,52 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.restaurant_menu,
-                            size: 64,
-                            color: Colors.grey[300],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Nenhum produto nesta categoria ainda.',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: AppTheme.textSecondary(context),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.restaurant_menu,
+                              size: 72,
+                              color: AppTheme.textSecondary(context).withValues(alpha: 0.4),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                            const SizedBox(height: 20),
+                            Text(
+                              'Nenhum produto nesta categoria ainda',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppTheme.fontSizeLg,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary(context),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Que tal escolher outra categoria ou atualizar o cardápio?',
+                              style: GoogleFonts.inter(
+                                fontSize: AppTheme.fontSizeMd,
+                                color: AppTheme.textSecondary(context),
+                                height: 1.4,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton.icon(
+                              onPressed: () => menuProvider.refresh(),
+                              icon: const Icon(Icons.refresh, size: 18),
+                              label: const Text('Atualizar cardápio'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.brandPurple,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   )
@@ -759,7 +773,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       return const PopScope(
         canPop: false,
         child: Scaffold(
-          backgroundColor: AppTheme.tachaoRed,
+          backgroundColor: AppTheme.brandPurple,
           body: Center(
             child: CircularProgressIndicator(color: Colors.white),
           ),
@@ -789,7 +803,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   icon: const Icon(Icons.refresh),
                   label: const Text('Tentar novamente'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.tachaoRed,
+                    backgroundColor: AppTheme.brandPurple,
                     foregroundColor: Colors.white,
                   ),
                 ),
@@ -840,7 +854,6 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               final width = constraints.maxWidth;
               final isTablet = width >= 700;
               final isDesktop = width >= 1100;
-              final showMiniCart = isTablet;
               final useCompactCards = isTablet && !isDesktop;
               final crossAxisCount = isDesktop ? 3 : (useCompactCards ? 1 : (isTablet ? 2 : 1));
               final isGrid = crossAxisCount > 1;
@@ -855,8 +868,53 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                         _buildHeader(context, isTablet, authProvider),
                         Expanded(
                           child: categories.isEmpty
-                              ? const Center(
-                                  child: Text('Nenhuma categoria disponível.'),
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.category_outlined,
+                                          size: 64,
+                                          color: AppTheme.textSecondary(context).withValues(alpha: 0.4),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Nenhuma categoria disponível',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: AppTheme.fontSizeLg,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.textPrimary(context),
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Verifique a conexão ou tente atualizar o cardápio.',
+                                          style: GoogleFonts.inter(
+                                            fontSize: AppTheme.fontSizeMd,
+                                            color: AppTheme.textSecondary(context),
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 20),
+                                        ElevatedButton.icon(
+                                          onPressed: () => menuProvider.refresh(),
+                                          icon: const Icon(Icons.refresh, size: 18),
+                                          label: const Text('Tentar novamente'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppTheme.brandPurple,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 )
                               : Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -898,7 +956,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                           },
                           child: FloatingActionButton.extended(
                             onPressed: _goToCart,
-                            backgroundColor: AppTheme.tachaoRed,
+                            backgroundColor: AppTheme.brandPurple,
                             icon: const Icon(
                               Icons.shopping_bag_outlined,
                               color: Colors.white,

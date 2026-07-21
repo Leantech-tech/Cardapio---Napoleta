@@ -100,7 +100,7 @@ class _CartViewState extends State<CartView> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Center(
-              child: CircularProgressIndicator(color: AppTheme.tachaoRed, strokeWidth: 2),
+              child: CircularProgressIndicator(color: AppTheme.brandPurple, strokeWidth: 2),
             ),
           ),
           errorBuilder: (context, error) => Container(
@@ -170,7 +170,7 @@ class _CartViewState extends State<CartView> {
                       gravity: 0.2,
                       shouldLoop: false,
                       colors: const [
-                        AppTheme.tachaoRed,
+                        AppTheme.brandPurple,
                         AppTheme.honeyGold,
                         Colors.green,
                         Colors.orange,
@@ -204,7 +204,7 @@ class _CartViewState extends State<CartView> {
               child: Icon(
                 Icons.shopping_bag_outlined,
                 size: 56,
-                color: AppTheme.tachaoRed.withValues(alpha: 0.6),
+                color: AppTheme.brandPurple.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 24),
@@ -230,7 +230,7 @@ class _CartViewState extends State<CartView> {
               onPressed: widget.onCheckoutComplete,
               icon: const Icon(Icons.restaurant_menu),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.tachaoRed,
+                backgroundColor: AppTheme.brandPurple,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -411,7 +411,7 @@ class _CartViewState extends State<CartView> {
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.tachaoRed,
+                        color: AppTheme.brandPurple,
                       ),
                     ),
                   ],
@@ -443,7 +443,7 @@ class _CartViewState extends State<CartView> {
         padding: const EdgeInsets.all(8),
         child: Icon(
           icon,
-          color: AppTheme.tachaoRed,
+          color: AppTheme.brandPurple,
           size: 18,
         ),
       ),
@@ -494,7 +494,7 @@ class _CartViewState extends State<CartView> {
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.tachaoRed,
+                        color: AppTheme.brandPurple,
                       ),
                     ),
                   ],
@@ -505,7 +505,7 @@ class _CartViewState extends State<CartView> {
             ElevatedButton(
               onPressed: () => _sendOrder(cart),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.tachaoRed,
+                backgroundColor: AppTheme.brandPurple,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
