@@ -19,21 +19,39 @@ void main() async {
 
   await KioskService.initialize();
 
-  runApp(const TachaoApp());
+  final authProvider = AuthProvider();
+  await authProvider.loadSettings();
+
+  final themeProvider = ThemeProvider();
+  await themeProvider.loadSettings();
+
+  runApp(
+    TachaoApp(
+      authProvider: authProvider,
+      themeProvider: themeProvider,
+    ),
+  );
 }
 
 class TachaoApp extends StatelessWidget {
-  const TachaoApp({super.key});
+  final AuthProvider authProvider;
+  final ThemeProvider themeProvider;
+
+  const TachaoApp({
+    super.key,
+    required this.authProvider,
+    required this.themeProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => DeliveryProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider.value(value: themeProvider),
         ChangeNotifierProvider(create: (_) => MenuProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

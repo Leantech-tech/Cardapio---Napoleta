@@ -29,18 +29,23 @@ class AuthProvider extends ChangeNotifier {
   bool get useComandaFeature => _useComandaFeature;
 
   AuthProvider() {
-    _loadSession();
+    checkSession();
   }
 
-  Future<void> _loadSession() async {
+  Future<void> loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _useComandaFeature = prefs.getBool(_keyUseComandaFeature) ?? true;
+    _storeAddress = prefs.getString(_keyStoreAddress) ?? '';
+    notifyListeners();
+  }
+
+  Future<void> checkSession() async {
     _isLoading = true;
     notifyListeners();
 
     await ApiClient().init();
 
-    final prefs = await SharedPreferences.getInstance();
-    _useComandaFeature = prefs.getBool(_keyUseComandaFeature) ?? true;
-    _storeAddress = prefs.getString(_keyStoreAddress) ?? '';
+    await loadSettings();
 
     if (ApiClient().isAuthenticated) {
       await _fetchMe();
