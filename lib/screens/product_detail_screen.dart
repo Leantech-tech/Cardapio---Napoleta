@@ -534,7 +534,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         TextField(
           controller: _obsController,
           decoration: InputDecoration(
-            hintText: 'Ex: Sem açúcar, troque o sorvete...',
+            hintText: 'Alguma observação?',
             hintStyle: GoogleFonts.inter(
               fontSize: 13,
               color: Colors.grey[400],

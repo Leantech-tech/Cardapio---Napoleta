@@ -5,7 +5,9 @@ import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 
 class LoginSheet extends StatefulWidget {
-  const LoginSheet({super.key});
+  final VoidCallback? onLoginSuccess;
+
+  const LoginSheet({super.key, this.onLoginSuccess});
 
   @override
   State<LoginSheet> createState() => _LoginSheetState();
@@ -35,6 +37,8 @@ class _LoginSheetState extends State<LoginSheet> {
     try {
       await context.read<AuthProvider>().login(user, password);
       if (!mounted) return;
+
+      widget.onLoginSuccess?.call();
 
       Navigator.pop(context);
 

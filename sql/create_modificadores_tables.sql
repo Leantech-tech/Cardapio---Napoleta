@@ -110,3 +110,24 @@ JOIN grupo_modificador gm ON gm.id = pgm.grupo_modificador_id AND gm.is_ativo = 
 JOIN grupo_modificador_item gmi ON gmi.grupo_modificador_id = gm.id AND gmi.is_ativo = true
 WHERE p.is_ativo = true AND (p.is_excluido = false OR p.is_excluido IS NULL)
 ORDER BY p.id, pgm.ordem, gmi.ordem;
+
+
+-- ============================================================
+-- TABELA DE ENDEREÇO DO CLIENTE
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS pessoa_endereco (
+  id BIGSERIAL PRIMARY KEY,
+  pessoa_id BIGINT NOT NULL REFERENCES pessoa(id),
+  empresa_id INTEGER NOT NULL,
+  tipo VARCHAR(20) NOT NULL DEFAULT 'entrega',
+  endereco TEXT NOT NULL,
+  principal BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pessoa_endereco_pessoa ON pessoa_endereco(pessoa_id);
+CREATE INDEX IF NOT EXISTS idx_pessoa_endereco_empresa ON pessoa_endereco(empresa_id);
+
+COMMENT ON TABLE pessoa_endereco IS 'Enderecos vinculados as pessoas/clientes';

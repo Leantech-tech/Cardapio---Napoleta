@@ -1,4 +1,5 @@
 import '../models/cart_item.dart';
+import '../models/order_checkout_data.dart';
 import 'db_client.dart';
 
 class ComandaService {
@@ -163,8 +164,9 @@ class ComandaService {
     int comandaId,
     int empresaId,
     List<CartItem> itens,
-    String numeroComanda,
-  ) async {
+    String numeroComanda, {
+    OrderCheckoutData? observacao,
+  }) async {
     final buffer = StringBuffer();
     buffer.writeln('=== NOVO PEDIDO - COMANDA $numeroComanda ===');
     for (final item in itens) {
@@ -174,6 +176,21 @@ class ComandaService {
       }
       if (item.observation != null && item.observation!.isNotEmpty) {
         buffer.writeln('   Obs: ${item.observation}');
+      }
+    }
+
+    if (observacao != null) {
+      buffer.writeln();
+      buffer.writeln('--- CLIENTE ---');
+      buffer.writeln('Tipo: ${observacao.tipoEntregaLabel}');
+      buffer.writeln('Nome: ${observacao.nome}');
+      buffer.writeln('CPF: ${observacao.cpf}');
+      if (observacao.endereco.isNotEmpty) {
+        buffer.writeln('Endereço: ${observacao.endereco}');
+      }
+      buffer.writeln('Pagamento: ${observacao.formaPagamentoLabel}');
+      if (observacao.isEntrega) {
+        buffer.writeln('* Pagar na entrega *');
       }
     }
 

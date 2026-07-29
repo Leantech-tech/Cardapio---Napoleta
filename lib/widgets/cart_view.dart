@@ -6,9 +6,11 @@ import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../models/order_checkout_data.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/cart_checkout_service.dart';
 import '../widgets/adaptive_image.dart';
+import '../widgets/order_checkout_dialog.dart';
 
 class CartView extends StatefulWidget {
   final VoidCallback? onCheckoutComplete;
@@ -33,7 +35,7 @@ class _CartViewState extends State<CartView> {
       if (!authProvider.useComandaFeature) return;
       final numero = BarcodeScannerService().extrairNumeroComanda(barcode);
       if (numero.isNotEmpty && mounted) {
-        _sendOrder(context.read<CartProvider>(), numeroComanda: numero);
+        _startCheckout(numeroComanda: numero);
       }
     });
   }
@@ -45,11 +47,24 @@ class _CartViewState extends State<CartView> {
     super.dispose();
   }
 
-  Future<void> _sendOrder(CartProvider cart, {String? numeroComanda}) async {
+  Future<void> _startCheckout({String? numeroComanda}) async {
+    final checkoutData = await OrderCheckoutDialog.show(context);
+    if (checkoutData == null || !mounted) return;
+
+    final cart = context.read<CartProvider>();
+    await _sendOrder(cart, checkoutData, numeroComanda: numeroComanda);
+  }
+
+  Future<void> _sendOrder(
+    CartProvider cart,
+    OrderCheckoutData checkoutData, {
+    String? numeroComanda,
+  }) async {
     await const CartCheckoutService().sendOrder(
       context,
       cart,
       numeroComanda: numeroComanda,
+      checkoutData: checkoutData,
       onSuccess: () {
         _confettiController.play();
         widget.onCheckoutComplete?.call();
@@ -503,7 +518,7 @@ class _CartViewState extends State<CartView> {
             ),
             const SizedBox(height: 14),
             ElevatedButton(
-              onPressed: () => _sendOrder(cart),
+              onPressed: _startCheckout,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.brandPurple,
                 foregroundColor: Colors.white,

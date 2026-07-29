@@ -10,12 +10,14 @@ class AuthProvider extends ChangeNotifier {
   static const String _keyUserName = 'auth_user_name';
   static const String _keyUseComandaFeature = 'use_comanda_feature';
   static const String _keyStoreAddress = 'store_address';
+  static const String _keyUseTotenMode = 'use_toten_mode';
 
   Map<String, dynamic>? _perfil;
   Map<String, dynamic>? _empresa;
   bool _isLoading = false;
   String? _error;
   bool _useComandaFeature = true;
+  bool _useTotenMode = false;
   String _storeAddress = '';
 
   bool get isLoggedIn => _perfil != null;
@@ -27,6 +29,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get useComandaFeature => _useComandaFeature;
+  bool get useTotenMode => _useTotenMode;
 
   AuthProvider() {
     checkSession();
@@ -35,6 +38,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _useComandaFeature = prefs.getBool(_keyUseComandaFeature) ?? true;
+    _useTotenMode = prefs.getBool(_keyUseTotenMode) ?? false;
     _storeAddress = prefs.getString(_keyStoreAddress) ?? '';
     notifyListeners();
   }
@@ -146,6 +150,13 @@ class AuthProvider extends ChangeNotifier {
     _storeAddress = value.trim();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyStoreAddress, _storeAddress);
+    notifyListeners();
+  }
+
+  Future<void> setUseTotenMode(bool value) async {
+    _useTotenMode = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyUseTotenMode, value);
     notifyListeners();
   }
 }

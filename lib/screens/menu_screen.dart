@@ -8,8 +8,10 @@ import 'package:provider/provider.dart';
 import '../models/category.dart';
 import '../models/product.dart';
 import '../providers/cart_provider.dart';
+import '../providers/checkout_provider.dart';
 import '../providers/menu_provider.dart';
 import '../providers/auth_provider.dart';
+import '../models/order_checkout_data.dart';
 import '../theme/app_theme.dart';
 import '../data/api_config.dart';
 import '../widgets/screensaver_carousel.dart';
@@ -21,6 +23,7 @@ import '../widgets/barcode_scanner_screen.dart';
 import '../widgets/comanda_viewer_sheet.dart';
 import '../widgets/cart_panel.dart';
 import '../widgets/mini_cart_preview.dart';
+import '../widgets/order_checkout_dialog.dart';
 import '../services/cart_checkout_service.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/comanda_service.dart';
@@ -79,6 +82,57 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
         _consultarComanda(numeroComanda: numero);
       }
     });
+
+    if (authProvider.useTotenMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _solicitarIdentificacaoCliente();
+        }
+      });
+    }
+  }
+
+  Future<void> _solicitarIdentificacaoCliente() async {
+    if (!mounted) return;
+
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isLoggedIn) {
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: AppTheme.surface(context),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => LoginSheet(
+          onLoginSuccess: () {
+            // Continua o fluxo de identificação após o login bem-sucedido.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _solicitarIdentificacaoCliente();
+            });
+          },
+        ),
+      );
+      return;
+    }
+
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      // Aguarda caso haja alguma rota/modal em transição.
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+    }
+
+    final checkoutData = await OrderCheckoutDialog.show(
+      context,
+      initialStep: 2,
+      tipoEntregaInicial: TipoEntrega.retirada,
+    );
+    if (!mounted) return;
+
+    if (checkoutData != null) {
+      context.read<CheckoutProvider>().setCheckoutData(checkoutData);
+    }
   }
 
   @override
@@ -95,15 +149,24 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     _inactivityTimer = Timer(_inactivityDuration, () {
       if (mounted) {
         setState(() => _isScreensaverActive = true);
+        context.read<CheckoutProvider>().clear();
       }
     });
   }
 
   void _resetInactivityTimer() {
+    final estavaAtivo = _isScreensaverActive;
     if (_isScreensaverActive) {
       setState(() => _isScreensaverActive = false);
     }
     _startInactivityTimer();
+
+    if (estavaAtivo && mounted) {
+      final authProvider = context.read<AuthProvider>();
+      if (authProvider.useTotenMode) {
+        _solicitarIdentificacaoCliente();
+      }
+    }
   }
 
   void _handleUserInteraction([_]) {
@@ -977,7 +1040,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           ),
         ),
         screensaverWidget,
-        if (showMiniCart)
+        if (showMiniCart && !_isScreensaverActive)
           Positioned(
             top: 90,
             right: 16,
@@ -986,8 +1049,25 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               width: isDesktop ? 320 : 280,
               child: MiniCartPreview(
                 onCheckout: () async {
+                  final authProvider = context.read<AuthProvider>();
+                  final checkoutProvider = context.read<CheckoutProvider>();
+
+                  OrderCheckoutData? checkoutData;
+
+                  if (authProvider.useTotenMode && checkoutProvider.hasCheckoutData) {
+                    checkoutData = checkoutProvider.checkoutData;
+                  } else {
+                    checkoutData = await OrderCheckoutDialog.show(context);
+                  }
+
+                  if (checkoutData == null || !context.mounted) return;
+
                   final cart = context.read<CartProvider>();
-                  await const CartCheckoutService().sendOrder(context, cart);
+                  await const CartCheckoutService().sendOrder(
+                    context,
+                    cart,
+                    checkoutData: checkoutData,
+                  );
                 },
               ),
             ),

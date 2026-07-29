@@ -15,6 +15,7 @@ class AppConfigSheet extends StatefulWidget {
 class _AppConfigSheetState extends State<AppConfigSheet> {
   final _addressController = TextEditingController();
   late bool _useComanda;
+  late bool _useTotenMode;
   late bool _isDarkMode;
 
   @override
@@ -24,6 +25,7 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
     final themeProvider = context.read<ThemeProvider>();
     _addressController.text = authProvider.storeAddress;
     _useComanda = authProvider.useComandaFeature;
+    _useTotenMode = authProvider.useTotenMode;
     _isDarkMode = themeProvider.isDarkMode;
   }
 
@@ -38,6 +40,7 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
     final themeProvider = context.read<ThemeProvider>();
 
     await authProvider.setUseComandaFeature(_useComanda);
+    await authProvider.setUseTotenMode(_useTotenMode);
     await authProvider.setStoreAddress(_addressController.text);
     await themeProvider.setDarkMode(_isDarkMode);
 
@@ -141,6 +144,30 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
     );
   }
 
+  Widget _buildModeCheckbox({
+    required String label,
+    required bool value,
+    required ValueChanged<bool?> onChanged,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Checkbox(
+          value: value,
+          onChanged: onChanged,
+          activeColor: AppTheme.brandPurple,
+        ),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: AppTheme.fontSizeSm,
+            color: AppTheme.textPrimary(context),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -191,6 +218,37 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
               value: _useComanda,
               onChanged: (value) => setState(() => _useComanda = value),
               activeThumbColor: AppTheme.brandPurple,
+            ),
+          ),
+          _buildCard(
+            context: context,
+            icon: Icons.devices_outlined,
+            title: 'Modo de uso',
+            subtitle: _useTotenMode
+                ? 'A identificação do cliente será ao entrar no app.'
+                : 'A identificação do cliente será ao finalizar o pedido.',
+            control: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildModeCheckbox(
+                  label: 'Toten',
+                  value: _useTotenMode,
+                  onChanged: (value) {
+                    if (value != null && value) {
+                      setState(() => _useTotenMode = true);
+                    }
+                  },
+                ),
+                _buildModeCheckbox(
+                  label: 'Link',
+                  value: !_useTotenMode,
+                  onChanged: (value) {
+                    if (value != null && value) {
+                      setState(() => _useTotenMode = false);
+                    }
+                  },
+                ),
+              ],
             ),
           ),
           _buildCard(

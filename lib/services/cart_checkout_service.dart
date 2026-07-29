@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/api_config.dart';
+import '../models/order_checkout_data.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../services/comanda_service.dart';
@@ -31,11 +32,17 @@ class CartCheckoutService {
     CartProvider cart, {
     String? numeroComanda,
     VoidCallback? onSuccess,
+    OrderCheckoutData? checkoutData,
   }) async {
     final authProvider = context.read<AuthProvider>();
 
     if (!authProvider.useComandaFeature) {
-      await sendOrderViaWhatsApp(context, cart, onSuccess: onSuccess);
+      await sendOrderViaWhatsApp(
+        context,
+        cart,
+        onSuccess: onSuccess,
+        checkoutData: checkoutData,
+      );
       return;
     }
 
@@ -85,9 +92,24 @@ class CartCheckoutService {
           'numero_comanda': numero,
           'qtd_itens': cart.items.length,
           'valor_total': cart.totalPrice,
+          if (checkoutData != null) ...{
+            'cliente_id': checkoutData.customerId,
+            'cliente_nome': checkoutData.nome,
+            'cliente_cpf': checkoutData.cpf,
+            'cliente_endereco': checkoutData.endereco,
+            'tipo_entrega': checkoutData.tipoEntregaLabel,
+            'forma_pagamento': checkoutData.formaPagamentoLabel,
+            'pagamento_na_entrega': checkoutData.isEntrega,
+          },
         },
       );
-      await service.adicionarFilaImpressao(comandaId, empresaId, cart.items, numero);
+      await service.adicionarFilaImpressao(
+        comandaId,
+        empresaId,
+        cart.items,
+        numero,
+        observacao: checkoutData,
+      );
 
       if (!context.mounted) return;
 
@@ -126,6 +148,7 @@ class CartCheckoutService {
     BuildContext context,
     CartProvider cart, {
     VoidCallback? onSuccess,
+    OrderCheckoutData? checkoutData,
   }) async {
     const phoneNumber = '5512988997924';
     final authProvider = context.read<AuthProvider>();
@@ -142,7 +165,21 @@ class CartCheckoutService {
     buffer.writeln();
     buffer.writeln('Total de itens: ${cart.totalItems}');
 
-    if (storeAddress.isNotEmpty) {
+    if (checkoutData != null) {
+      buffer.writeln();
+      buffer.writeln('Tipo: ${checkoutData.tipoEntregaLabel}');
+      buffer.writeln('Cliente: ${checkoutData.nome}');
+      buffer.writeln('CPF: ${checkoutData.cpf}');
+      if (checkoutData.endereco.isNotEmpty) {
+        buffer.writeln('Endereço: ${checkoutData.endereco}');
+      }
+      buffer.writeln('Pagamento: ${checkoutData.formaPagamentoLabel}');
+      if (checkoutData.isEntrega) {
+        buffer.writeln('(O entregador receberá o pagamento na entrega)');
+      }
+    }
+
+    if (storeAddress.isNotEmpty && (checkoutData == null || checkoutData.isRetirada)) {
       buffer.writeln();
       buffer.writeln('Endereço da loja para retirada:');
       buffer.writeln(storeAddress);
