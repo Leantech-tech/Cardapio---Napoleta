@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/cart_provider.dart';
@@ -18,10 +19,27 @@ void main() async {
 
   await ApiClient().init();
 
-  await KioskService.initialize();
+  // KioskService usa APIs nativas (wakelock, lock task) indisponíveis no Web.
+  if (!kIsWeb) {
+    await KioskService.initialize();
+  }
 
   final authProvider = AuthProvider();
   await authProvider.loadSettings();
+
+  // Login silencioso automático — o cliente nunca vê uma tela de login.
+  // Usa credenciais fixas de "cardápio" (totem) para autenticar a sessão.
+  if (!ApiClient().isAuthenticated) {
+    try {
+      await authProvider.login(
+        'cardapio@napoleta.com.br',
+        '@J20r91s0',
+      );
+    } catch (e) {
+      // Ignora falha de rede na inicialização; o app abre mesmo sem sessão.
+      debugPrint('[AutoLogin] Falha no login silencioso: \$e');
+    }
+  }
 
   final themeProvider = ThemeProvider();
   await themeProvider.loadSettings();

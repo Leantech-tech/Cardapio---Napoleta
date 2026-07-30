@@ -1,27 +1,30 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/customer.dart';
+import '../models/customer_address.dart';
 import '../models/order_checkout_data.dart';
-import '../services/cep_service.dart';
 import '../services/customer_service.dart';
 import '../theme/app_theme.dart';
+import 'address_manager_dialog.dart';
 
 class OrderCheckoutDialog extends StatefulWidget {
   final int initialStep;
   final TipoEntrega? tipoEntregaInicial;
+  final VoidCallback? onBack;
 
   const OrderCheckoutDialog({
     super.key,
     this.initialStep = 1,
     this.tipoEntregaInicial,
+    this.onBack,
   });
 
   static Future<OrderCheckoutData?> show(
     BuildContext context, {
     int initialStep = 1,
     TipoEntrega? tipoEntregaInicial,
+    VoidCallback? onBack,
   }) async {
     return showDialog<OrderCheckoutData>(
       context: context,
@@ -29,6 +32,7 @@ class OrderCheckoutDialog extends StatefulWidget {
       builder: (_) => OrderCheckoutDialog(
         initialStep: initialStep,
         tipoEntregaInicial: tipoEntregaInicial,
+        onBack: onBack,
       ),
     );
   }
@@ -44,13 +48,12 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
 
   TipoEntrega? _tipoEntrega;
 
+  Customer? _customerLoaded;
+  CustomerAddress? _selectedAddress;
+  bool _isLoadingCustomer = false;
+
   final _nomeController = TextEditingController();
   final _cpfController = TextEditingController();
-  final _cepController = TextEditingController();
-  final _enderecoController = TextEditingController();
-  final _cepFocusNode = FocusNode();
-
-  bool _isLoadingCep = false;
 
   FormaPagamento _formaPagamento = FormaPagamento.dinheiro;
 
@@ -59,24 +62,13 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
     super.initState();
     _step = widget.initialStep;
     _tipoEntrega = widget.tipoEntregaInicial;
-    _cepFocusNode.addListener(_onCepFocusChange);
   }
 
   @override
   void dispose() {
-    _cepFocusNode.removeListener(_onCepFocusChange);
-    _cepFocusNode.dispose();
     _nomeController.dispose();
     _cpfController.dispose();
-    _cepController.dispose();
-    _enderecoController.dispose();
     super.dispose();
-  }
-
-  void _onCepFocusChange() {
-    if (!_cepFocusNode.hasFocus) {
-      _buscarEnderecoPorCep(_cepController.text);
-    }
   }
 
   void _selecionarTipo(TipoEntrega tipo) {
@@ -99,38 +91,197 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
     return buffer.toString();
   }
 
-  String _formatarCep(String texto) {
-    final numeros = texto.replaceAll(RegExp(r'[^0-9]'), '');
-    if (numeros.length > 8) return numeros.substring(0, 8);
+  Future<void> _buscarClientePorCpf() async {
+    final cpfLimpo = _cpfController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cpfLimpo.length != 11) return;
 
-    StringBuffer buffer = StringBuffer();
-    for (int i = 0; i < numeros.length; i++) {
-      if (i == 5) buffer.write('-');
-      buffer.write(numeros[i]);
+    setState(() => _isLoadingCustomer = true);
+
+    try {
+      final customer = await CustomerService().buscarPorCpf(cpfLimpo);
+      if (!mounted) return;
+
+      setState(() {
+        _customerLoaded = customer;
+        _isLoadingCustomer = false;
+      });
+
+      if (customer != null) {
+        if (_nomeController.text.trim().isEmpty) {
+          _nomeController.text = customer.nome;
+        }
+
+        if (_tipoEntrega == TipoEntrega.entrega && customer.addresses.isNotEmpty) {
+          _selecionarEndereco(customer.mainAddress!);
+        }
+      }
+    } catch (e) {
+      debugPrint('OrderCheckoutDialog: erro ao buscar cliente: $e');
+      if (!mounted) return;
+      setState(() {
+        _error = 'Erro ao buscar cliente: $e';
+        _isLoadingCustomer = false;
+      });
     }
-    return buffer.toString();
   }
 
-  Future<void> _buscarEnderecoPorCep(String texto) async {
-    final numeros = texto.replaceAll(RegExp(r'[^0-9]'), '');
-    if (numeros.length != 8) return;
+  void _selecionarEndereco(CustomerAddress? address) {
+    setState(() => _selectedAddress = address);
+  }
 
-    setState(() => _isLoadingCep = true);
+  Future<void> _abrirGerenciadorEnderecos() async {
+    setState(() => _error = null);
 
-    final resultado = await CepService.buscar(numeros);
-
-    if (!mounted) return;
-
-    setState(() => _isLoadingCep = false);
-
-    if (resultado == null) {
-      setState(() => _error = 'CEP não encontrado.');
+    if (_cpfController.text.replaceAll(RegExp(r'[^0-9]'), '').length != 11) {
+      setState(() => _error = 'Informe o CPF do cliente antes de cadastrar endereços.');
       return;
     }
 
-    setState(() => _error = null);
+    if (_nomeController.text.trim().isEmpty) {
+      setState(() => _error = 'Informe o nome do cliente antes de cadastrar endereços.');
+      return;
+    }
 
-    _enderecoController.text = resultado.enderecoCompleto;
+    var customer = _customerLoaded;
+
+    if (customer == null || customer.id == null) {
+      setState(() => _isLoadingCustomer = true);
+      try {
+        customer = await CustomerService().criar(
+          Customer(
+            nome: _nomeController.text,
+            cpf: _cpfController.text,
+          ),
+        );
+        if (!mounted) return;
+        setState(() {
+          _customerLoaded = customer;
+          _isLoadingCustomer = false;
+        });
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _error = 'Erro ao criar cliente: $e';
+          _isLoadingCustomer = false;
+        });
+        return;
+      }
+    }
+
+    if (customer.id == null) return;
+
+    final enderecosAtualizados = await AddressManagerDialog.show(
+      context,
+      pessoaId: customer.id!,
+      existingAddresses: customer.addresses,
+    );
+
+    if (!mounted || enderecosAtualizados == null) return;
+
+    setState(() {
+      _customerLoaded = customer!.withAddresses(enderecosAtualizados);
+      if (enderecosAtualizados.isNotEmpty) {
+        _selectedAddress = enderecosAtualizados.last;
+      }
+    });
+  }
+
+  Widget _buildAddressDropdown() {
+    final addresses = _customerLoaded?.addresses ?? [];
+
+    if (addresses.isEmpty) {
+      return Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppTheme.inputBg(context),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Nenhum endereço cadastrado',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppTheme.textSecondary(context),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          _buildAddAddressButton(),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.inputBg(context),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<CustomerAddress>(
+                value: _selectedAddress,
+                isExpanded: true,
+                icon: Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondary(context)),
+                dropdownColor: AppTheme.surface(context),
+                hint: Text(
+                  'Selecione um endereço',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppTheme.textSecondary(context),
+                  ),
+                ),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppTheme.textPrimary(context),
+                ),
+                items: addresses.map((address) {
+                  return DropdownMenuItem<CustomerAddress>(
+                    value: address,
+                    child: Text(
+                      address.endereco,
+                      style: GoogleFonts.inter(fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged: _selecionarEndereco,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        _buildAddAddressButton(),
+      ],
+    );
+  }
+
+  Widget _buildAddAddressButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.brandPurple,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: IconButton(
+        onPressed: _isLoadingCustomer ? null : _abrirGerenciadorEnderecos,
+        icon: _isLoadingCustomer
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Icon(Icons.add, color: Colors.white),
+        tooltip: 'Cadastrar endereços',
+      ),
+    );
   }
 
   Future<void> _confirmar() async {
@@ -138,7 +289,7 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
     setState(() => _error = null);
 
     final cpfLimpo = _cpfController.text.replaceAll(RegExp(r'[^0-9]'), '');
-    debugPrint('OrderCheckoutDialog: nome="${_nomeController.text}" cpf=$cpfLimpo endereco="${_enderecoController.text}"');
+    debugPrint('OrderCheckoutDialog: nome="${_nomeController.text}" cpf=$cpfLimpo');
 
     if (_nomeController.text.trim().isEmpty) {
       setState(() => _error = 'O nome do cliente é obrigatório.');
@@ -155,9 +306,8 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
       return;
     }
 
-    if (_tipoEntrega == TipoEntrega.entrega &&
-        _enderecoController.text.trim().isEmpty) {
-      setState(() => _error = 'Informe o endereço completo para entrega.');
+    if (_tipoEntrega == TipoEntrega.entrega && _selectedAddress == null) {
+      setState(() => _error = 'Selecione ou cadastre um endereço para entrega.');
       return;
     }
 
@@ -167,12 +317,32 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
       final customer = Customer(
         nome: _nomeController.text,
         cpf: _cpfController.text,
-        endereco: _enderecoController.text,
       );
 
-      debugPrint('OrderCheckoutDialog: chamando CustomerService para CPF $cpfLimpo');
-      final cadastrado = await CustomerService().buscarOuCriar(customer);
-      debugPrint('OrderCheckoutDialog: customer retornado - id=${cadastrado.id}, nome=${cadastrado.nome}');
+      final tipoEndereco = _tipoEntrega == TipoEntrega.retirada ? 'retirada' : 'entrega';
+      debugPrint('OrderCheckoutDialog: chamando CustomerService para CPF $cpfLimpo (tipo=$tipoEndereco)');
+
+      Customer cadastrado;
+      CustomerAddress? enderecoUsado;
+      if (_tipoEntrega == TipoEntrega.entrega) {
+        cadastrado = await CustomerService().salvarClienteEEndereco(
+          customer,
+          _selectedAddress!,
+          tipoEndereco: tipoEndereco,
+        );
+        enderecoUsado = cadastrado.addresses.isNotEmpty
+            ? cadastrado.addresses.lastWhere(
+                (a) => a.isSameAddress(_selectedAddress!),
+                orElse: () => cadastrado.mainAddress!,
+              )
+            : null;
+      } else {
+        cadastrado = await CustomerService().buscarOuCriar(
+          customer,
+          tipoEndereco: tipoEndereco,
+        );
+      }
+      debugPrint('OrderCheckoutDialog: customer retornado - id=${cadastrado.id}, nome=${cadastrado.nome}, enderecos=${cadastrado.addresses.length}');
 
       if (!mounted) return;
 
@@ -180,9 +350,14 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         tipoEntrega: _tipoEntrega!,
         nome: cadastrado.nome,
         cpf: cadastrado.cpfFormatado,
-        endereco: cadastrado.endereco,
+        rua: enderecoUsado?.rua ?? '',
+        bairro: enderecoUsado?.bairro ?? '',
+        cidade: enderecoUsado?.cidade ?? '',
+        estado: enderecoUsado?.estado ?? '',
+        cep: enderecoUsado?.cep ?? '',
         formaPagamento: _formaPagamento,
         customerId: cadastrado.id,
+        addressId: enderecoUsado?.id,
       );
 
       Navigator.of(context).pop(data);
@@ -214,18 +389,34 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
   }
 
   Widget _buildStep1() {
+    final onBack = widget.onBack;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'Como deseja receber?',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary(context),
-          ),
+        Row(
+          children: [
+            IconButton(
+              onPressed: onBack ?? () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back),
+              color: AppTheme.textPrimary(context),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Como deseja receber?',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary(context),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         _buildTipoCard(
           icon: Icons.storefront_outlined,
           title: 'Retirar na loja',
@@ -313,7 +504,13 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         Row(
           children: [
             IconButton(
-              onPressed: () => setState(() => _step = 1),
+              onPressed: () {
+                if (widget.onBack != null) {
+                  widget.onBack!();
+                } else {
+                  setState(() => _step = 1);
+                }
+              },
               icon: const Icon(Icons.arrow_back),
               color: AppTheme.textPrimary(context),
               padding: EdgeInsets.zero,
@@ -343,13 +540,6 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         ),
         const SizedBox(height: 20),
         _buildTextField(
-          controller: _nomeController,
-          label: 'Nome do cliente',
-          icon: Icons.person_outline,
-          textCapitalization: TextCapitalization.words,
-        ),
-        const SizedBox(height: 12),
-        _buildTextField(
           controller: _cpfController,
           label: 'CPF *',
           icon: Icons.badge_outlined,
@@ -363,46 +553,41 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
               );
             }),
           ],
-        ),
-        const SizedBox(height: 12),
-        _buildTextField(
-          controller: _cepController,
-          focusNode: _cepFocusNode,
-          label: 'CEP',
-          icon: Icons.location_searching_outlined,
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            TextInputFormatter.withFunction((oldValue, newValue) {
-              final formatado = _formatarCep(newValue.text);
-              return TextEditingValue(
-                text: formatado,
-                selection: TextSelection.collapsed(offset: formatado.length),
-              );
-            }),
-          ],
-          suffixIcon: _isLoadingCep
+          suffixIcon: _isLoadingCustomer
               ? const SizedBox(
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : null,
-          onSubmitted: _buscarEnderecoPorCep,
+          onSubmitted: (_) => _buscarClientePorCpf(),
           onChanged: (value) {
             final numeros = value.replaceAll(RegExp(r'[^0-9]'), '');
-            if (numeros.length == 8 && !_isLoadingCep) {
-              _buscarEnderecoPorCep(value);
+            if (numeros.length == 11 && !_isLoadingCustomer) {
+              _buscarClientePorCpf();
             }
           },
         ),
         const SizedBox(height: 12),
         _buildTextField(
-          controller: _enderecoController,
-          label: isEntrega ? 'Endereço completo *' : 'Endereço (opcional)',
-          icon: Icons.location_on_outlined,
-          textCapitalization: TextCapitalization.sentences,
-          maxLines: 2,
+          controller: _nomeController,
+          label: 'Nome do cliente',
+          icon: Icons.person_outline,
+          textCapitalization: TextCapitalization.words,
         ),
+        if (isEntrega) ...[
+          const SizedBox(height: 20),
+          Text(
+            'Endereço de entrega',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary(context),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildAddressDropdown(),
+        ],
         const SizedBox(height: 16),
         Text(
           'Forma de pagamento',

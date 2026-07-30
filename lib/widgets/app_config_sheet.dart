@@ -14,6 +14,7 @@ class AppConfigSheet extends StatefulWidget {
 
 class _AppConfigSheetState extends State<AppConfigSheet> {
   final _addressController = TextEditingController();
+  final _whatsappController = TextEditingController();
   late bool _useComanda;
   late bool _useTotenMode;
   late bool _isDarkMode;
@@ -24,6 +25,7 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
     final authProvider = context.read<AuthProvider>();
     final themeProvider = context.read<ThemeProvider>();
     _addressController.text = authProvider.storeAddress;
+    _whatsappController.text = authProvider.whatsappNumber;
     _useComanda = authProvider.useComandaFeature;
     _useTotenMode = authProvider.useTotenMode;
     _isDarkMode = themeProvider.isDarkMode;
@@ -32,6 +34,7 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
   @override
   void dispose() {
     _addressController.dispose();
+    _whatsappController.dispose();
     super.dispose();
   }
 
@@ -42,6 +45,7 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
     await authProvider.setUseComandaFeature(_useComanda);
     await authProvider.setUseTotenMode(_useTotenMode);
     await authProvider.setStoreAddress(_addressController.text);
+    await authProvider.setWhatsappNumber(_whatsappController.text);
     await themeProvider.setDarkMode(_isDarkMode);
 
     if (!mounted) return;
@@ -177,23 +181,24 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
         top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.border(context),
-                borderRadius: BorderRadius.circular(4),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.border(context),
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
+            const SizedBox(height: 20),
+            Text(
             'Configurações',
             style: GoogleFonts.poppins(
               fontSize: AppTheme.fontSizeXl,
@@ -220,6 +225,45 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
               activeThumbColor: AppTheme.brandPurple,
             ),
           ),
+          if (!_useComanda) ...[
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionTitle(context, 'WhatsApp para Envio'),
+                  const SizedBox(height: 6),
+                  _buildSectionDescription(
+                    context,
+                    'DDD + número para onde os pedidos serão enviados.',
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _whatsappController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      hintText: 'Ex: 5512988997924',
+                      hintStyle: GoogleFonts.inter(
+                        fontSize: AppTheme.fontSizeSm,
+                        color: Colors.grey[400],
+                      ),
+                      prefixIcon: const Icon(Icons.phone, color: AppTheme.brandPurple, size: 20),
+                      filled: true,
+                      fillColor: AppTheme.inputBg(context),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.all(14),
+                    ),
+                    style: GoogleFonts.inter(fontSize: AppTheme.fontSizeMd),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ],
           _buildCard(
             context: context,
             icon: Icons.devices_outlined,
@@ -315,6 +359,7 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
           const SizedBox(height: 8),
         ],
       ),
+    ),
     );
   }
 }

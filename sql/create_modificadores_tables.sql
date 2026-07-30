@@ -121,7 +121,11 @@ CREATE TABLE IF NOT EXISTS pessoa_endereco (
   pessoa_id BIGINT NOT NULL REFERENCES pessoa(id),
   empresa_id INTEGER NOT NULL,
   tipo VARCHAR(20) NOT NULL DEFAULT 'entrega',
-  endereco TEXT NOT NULL,
+  rua TEXT,
+  bairro TEXT,
+  cidade TEXT,
+  estado VARCHAR(2),
+  cep VARCHAR(9),
   principal BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -131,3 +135,8 @@ CREATE INDEX IF NOT EXISTS idx_pessoa_endereco_pessoa ON pessoa_endereco(pessoa_
 CREATE INDEX IF NOT EXISTS idx_pessoa_endereco_empresa ON pessoa_endereco(empresa_id);
 
 COMMENT ON TABLE pessoa_endereco IS 'Enderecos vinculados as pessoas/clientes';
+COMMENT ON COLUMN pessoa_endereco.rua IS 'Logradouro e numero do endereco';
+COMMENT ON COLUMN pessoa_endereco.bairro IS 'Bairro do endereco';
+COMMENT ON COLUMN pessoa_endereco.cidade IS 'Cidade do endereco';
+COMMENT ON COLUMN pessoa_endereco.estado IS 'UF do endereco (2 caracteres)';
+COMMENT ON COLUMN pessoa_endereco.cep IS 'CEP do endereco (formato 00000-000)';

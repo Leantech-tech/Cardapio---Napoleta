@@ -66,4 +66,13 @@ class CepResult {
 
     return partes.join(', ');
   }
+
+  /// Retorna os campos separados prontos para preenchimento do formulario.
+  Map<String, String> get camposSeparados => {
+        'rua': logradouro,
+        'bairro': bairro,
+        'cidade': localidade,
+        'estado': uf,
+        'cep': cep,
+      };
 }

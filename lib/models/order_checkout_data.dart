@@ -6,17 +6,27 @@ class OrderCheckoutData {
   final TipoEntrega tipoEntrega;
   final String nome;
   final String cpf;
-  final String endereco;
+  final String rua;
+  final String bairro;
+  final String cidade;
+  final String estado;
+  final String cep;
   final FormaPagamento formaPagamento;
   final int? customerId;
+  final int? addressId;
 
   const OrderCheckoutData({
     required this.tipoEntrega,
     required this.nome,
     required this.cpf,
-    required this.endereco,
+    this.rua = '',
+    this.bairro = '',
+    this.cidade = '',
+    this.estado = '',
+    this.cep = '',
     required this.formaPagamento,
     this.customerId,
+    this.addressId,
   });
 
   bool get isEntrega => tipoEntrega == TipoEntrega.entrega;
@@ -25,6 +35,23 @@ class OrderCheckoutData {
   String get tipoEntregaLabel => isEntrega ? 'Entrega' : 'Retirar na loja';
 
   String get formaPagamentoLabel => labelForFormaPagamento(formaPagamento);
+
+  /// Endereco completo formatado a partir dos campos separados.
+  String get endereco {
+    final partes = <String>[
+      rua.trim(),
+      bairro.trim(),
+      if (cidade.trim().isNotEmpty && estado.trim().isNotEmpty)
+        '${cidade.trim()} - ${estado.trim().toUpperCase()}'
+      else if (cidade.trim().isNotEmpty)
+        cidade.trim()
+      else if (estado.trim().isNotEmpty)
+        estado.trim().toUpperCase(),
+      cep.trim(),
+    ].where((p) => p.isNotEmpty);
+
+    return partes.join(', ');
+  }
 
   static String labelForFormaPagamento(FormaPagamento forma) {
     switch (forma) {

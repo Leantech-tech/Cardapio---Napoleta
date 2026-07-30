@@ -11,6 +11,7 @@ class AuthProvider extends ChangeNotifier {
   static const String _keyUseComandaFeature = 'use_comanda_feature';
   static const String _keyStoreAddress = 'store_address';
   static const String _keyUseTotenMode = 'use_toten_mode';
+  static const String _keyWhatsappNumber = 'whatsapp_number';
 
   Map<String, dynamic>? _perfil;
   Map<String, dynamic>? _empresa;
@@ -19,6 +20,7 @@ class AuthProvider extends ChangeNotifier {
   bool _useComandaFeature = true;
   bool _useTotenMode = false;
   String _storeAddress = '';
+  String _whatsappNumber = '';
 
   bool get isLoggedIn => _perfil != null;
   Map<String, dynamic>? get perfil => _perfil;
@@ -26,6 +28,7 @@ class AuthProvider extends ChangeNotifier {
   String get userName => _perfil?['nome'] ?? '';
   String get userId => _perfil?['user_id']?.toString() ?? '';
   String get storeAddress => _storeAddress;
+  String get whatsappNumber => _whatsappNumber;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get useComandaFeature => _useComandaFeature;
@@ -40,6 +43,7 @@ class AuthProvider extends ChangeNotifier {
     _useComandaFeature = prefs.getBool(_keyUseComandaFeature) ?? true;
     _useTotenMode = prefs.getBool(_keyUseTotenMode) ?? false;
     _storeAddress = prefs.getString(_keyStoreAddress) ?? '';
+    _whatsappNumber = prefs.getString(_keyWhatsappNumber) ?? '5512988997924';
     notifyListeners();
   }
 
@@ -157,6 +161,13 @@ class AuthProvider extends ChangeNotifier {
     _useTotenMode = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyUseTotenMode, value);
+    notifyListeners();
+  }
+
+  Future<void> setWhatsappNumber(String value) async {
+    _whatsappNumber = value.trim();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyWhatsappNumber, _whatsappNumber);
     notifyListeners();
   }
 }

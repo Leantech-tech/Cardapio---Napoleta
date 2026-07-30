@@ -10,6 +10,7 @@ import '../models/order_checkout_data.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/cart_checkout_service.dart';
 import '../widgets/adaptive_image.dart';
+import '../utils/auth_helper.dart';
 import '../widgets/order_checkout_dialog.dart';
 
 class CartView extends StatefulWidget {
@@ -48,6 +49,9 @@ class _CartViewState extends State<CartView> {
   }
 
   Future<void> _startCheckout({String? numeroComanda}) async {
+    final autenticado = await requireAuth(context);
+    if (!mounted || !autenticado) return;
+
     final checkoutData = await OrderCheckoutDialog.show(context);
     if (checkoutData == null || !mounted) return;
 

@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:io' show exit, Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kiosk_mode/kiosk_mode.dart';
@@ -18,16 +19,19 @@ import '../widgets/screensaver_carousel.dart';
 import '../widgets/product_card.dart';
 import '../widgets/login_sheet.dart';
 import '../widgets/app_config_sheet.dart';
+import '../widgets/support_login_sheet.dart';
 import '../widgets/product_card_grid.dart';
 import '../widgets/barcode_scanner_screen.dart';
 import '../widgets/comanda_viewer_sheet.dart';
 import '../widgets/cart_panel.dart';
 import '../widgets/mini_cart_preview.dart';
 import '../widgets/order_checkout_dialog.dart';
+import '../widgets/totem_mode_selector.dart';
 import '../services/cart_checkout_service.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/comanda_service.dart';
 import '../services/kiosk_service.dart';
+import '../utils/auth_helper.dart';
 import 'product_detail_screen.dart';
 
 class MenuScreen extends StatefulWidget {
@@ -86,35 +90,54 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     if (authProvider.useTotenMode) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _solicitarIdentificacaoCliente();
+          _mostrarSeletorModalidadeTotem();
         }
       });
+    }
+  }
+
+  Future<void> _mostrarSeletorModalidadeTotem() async {
+    if (!mounted) return;
+
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+    }
+
+    final modo = await TotemModeSelector.show(context);
+    if (!mounted) return;
+
+    switch (modo) {
+      case TotemMode.acai:
+        await _solicitarIdentificacaoCliente();
+      case TotemMode.paleta:
+        // TODO: vincular ao fluxo específico de paletas.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Opção Paleta será integrada em breve.',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+            ),
+            backgroundColor: AppTheme.brandPurple,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      case null:
+        // Usuário fechou o seletor sem escolher; nada a fazer.
+        break;
     }
   }
 
   Future<void> _solicitarIdentificacaoCliente() async {
     if (!mounted) return;
 
-    final authProvider = context.read<AuthProvider>();
-    if (!authProvider.isLoggedIn) {
-      await showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: AppTheme.surface(context),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (_) => LoginSheet(
-          onLoginSuccess: () {
-            // Continua o fluxo de identificação após o login bem-sucedido.
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _solicitarIdentificacaoCliente();
-            });
-          },
-        ),
-      );
-      return;
-    }
+    final autenticado = await requireAuth(context);
+    if (!mounted || !autenticado) return;
 
     final navigator = Navigator.of(context);
     if (navigator.canPop()) {
@@ -127,6 +150,13 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       context,
       initialStep: 2,
       tipoEntregaInicial: TipoEntrega.retirada,
+      onBack: () async {
+        Navigator.of(context).pop();
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (mounted) {
+          await _mostrarSeletorModalidadeTotem();
+        }
+      },
     );
     if (!mounted) return;
 
@@ -164,7 +194,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     if (estavaAtivo && mounted) {
       final authProvider = context.read<AuthProvider>();
       if (authProvider.useTotenMode) {
-        _solicitarIdentificacaoCliente();
+        _mostrarSeletorModalidadeTotem();
       }
     }
   }
@@ -399,16 +429,17 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (authProvider.isLoggedIn)
-                ListTile(
-                  leading: const Icon(Icons.settings_outlined, color: AppTheme.brandPurple),
-                  title: Text(
-                    'Configurações',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.pop(context);
+              ListTile(
+                leading: const Icon(Icons.settings_outlined, color: AppTheme.brandPurple),
+                title: Text(
+                  'Configurações',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final isAuthorized = await SupportLoginSheet.show(context);
+                  if (isAuthorized && context.mounted) {
                     showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
@@ -418,8 +449,9 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                       ),
                       builder: (_) => const AppConfigSheet(),
                     );
-                  },
-                ),
+                  }
+                },
+              ),
               const Divider(),
               if (!authProvider.isLoggedIn)
                 ListTile(
@@ -468,15 +500,26 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   ),
                   onTap: () async {
                     Navigator.pop(context);
+                    await authProvider.logout();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Você saiu da conta.', style: GoogleFonts.inter(fontSize: 14)),
+                          backgroundColor: AppTheme.brandPurple,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      );
+                    }
                     // Desativa o modo quiosque para permitir fechar o app.
                     try {
                       await stopKioskMode();
                     } catch (_) {
                       // Ignora erro: pode já estar fora do modo quiosque.
                     }
-                    if (Platform.isAndroid) {
+                    if (!kIsWeb && Platform.isAndroid) {
                       SystemNavigator.pop();
-                    } else {
+                    } else if (!kIsWeb) {
                       exit(0);
                     }
                   },
@@ -1051,6 +1094,9 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                 onCheckout: () async {
                   final authProvider = context.read<AuthProvider>();
                   final checkoutProvider = context.read<CheckoutProvider>();
+
+                  final autenticado = await requireAuth(context);
+                  if (!context.mounted || !autenticado) return;
 
                   OrderCheckoutData? checkoutData;
 

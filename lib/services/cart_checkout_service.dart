@@ -7,6 +7,7 @@ import '../models/order_checkout_data.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../services/comanda_service.dart';
+import '../services/print_queue_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/barcode_scanner_screen.dart';
 import '../widgets/comanda_order_sheet.dart';
@@ -36,6 +37,50 @@ class CartCheckoutService {
   }) async {
     final authProvider = context.read<AuthProvider>();
 
+    if (checkoutData == null) {
+      if (!context.mounted) return;
+      _showSnackBar(
+        context,
+        'Identifique o cliente antes de finalizar o pedido.',
+        Colors.orange[700],
+      );
+      return;
+    }
+
+    try {
+      // Todo pedido (link ou totem) é salvo na fila de impressão.
+      // O setor é definido pela origem: Delivery para link, Balcao para totem.
+      await PrintQueueService().adicionarPedido(
+        itens: cart.items,
+        checkoutData: checkoutData,
+        isTotem: authProvider.useTotenMode,
+        storeAddress: authProvider.storeAddress,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      _showSnackBar(
+        context,
+        'Erro ao enfileirar pedido para impressão: $e',
+        Colors.red[600],
+      );
+      return;
+    }
+
+    // No modo totem o pedido termina aqui: não sai por WhatsApp nem comanda.
+    if (authProvider.useTotenMode) {
+      if (!context.mounted) return;
+      _showSnackBar(
+        context,
+        'Pedido enviado para impressão!',
+        Colors.green[600],
+      );
+      cart.clear();
+      onSuccess?.call();
+      return;
+    }
+
+    if (!context.mounted) return;
+
     if (!authProvider.useComandaFeature) {
       await sendOrderViaWhatsApp(
         context,
@@ -46,6 +91,24 @@ class CartCheckoutService {
       return;
     }
 
+    if (!context.mounted) return;
+
+    await sendOrderViaComanda(
+      context,
+      cart,
+      numeroComanda: numeroComanda,
+      onSuccess: onSuccess,
+      checkoutData: checkoutData,
+    );
+  }
+
+  Future<void> sendOrderViaComanda(
+    BuildContext context,
+    CartProvider cart, {
+    String? numeroComanda,
+    VoidCallback? onSuccess,
+    OrderCheckoutData? checkoutData,
+  }) async {
     late String numero;
 
     if (numeroComanda != null && numeroComanda.isNotEmpty) {
@@ -150,8 +213,11 @@ class CartCheckoutService {
     VoidCallback? onSuccess,
     OrderCheckoutData? checkoutData,
   }) async {
-    const phoneNumber = '5512988997924';
     final authProvider = context.read<AuthProvider>();
+    final rawPhoneNumber = authProvider.whatsappNumber.isNotEmpty
+        ? authProvider.whatsappNumber
+        : '5512988997924';
+    final phoneNumber = rawPhoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
     final storeAddress = authProvider.storeAddress;
 
     final buffer = StringBuffer();

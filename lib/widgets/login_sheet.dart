@@ -40,7 +40,7 @@ class _LoginSheetState extends State<LoginSheet> {
 
       widget.onLoginSuccess?.call();
 
-      Navigator.pop(context);
+      Navigator.pop(context, true);
 
       _showSnackBar('Login realizado com sucesso!', color: const Color(0xFF4CAF50));
     } catch (e) {
