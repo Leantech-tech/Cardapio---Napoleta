@@ -22,8 +22,8 @@ class ProductCard extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isTablet = screenWidth >= 700;
     final isSmallPhone = screenWidth < 360;
-    final imageWidth = isTablet ? 160.0 : (isSmallPhone ? 110.0 : 130.0);
-    final imageHeight = isTablet ? 180.0 : (isSmallPhone ? 128.0 : 148.0);
+    final imageWidth = isTablet ? 160.0 : (isSmallPhone ? 80.0 : 96.0);
+    final imageHeight = isTablet ? 180.0 : (isSmallPhone ? 96.0 : 112.0);
 
     return FadeInUp(
       duration: const Duration(milliseconds: 400),
@@ -69,10 +69,10 @@ class ProductCard extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
-                    isSmallPhone ? 10 : 14,
-                    isSmallPhone ? 10 : 12,
-                    isSmallPhone ? 10 : 14,
-                    isSmallPhone ? 10 : 12,
+                    isSmallPhone ? 8 : 10,
+                    isSmallPhone ? 8 : 10,
+                    isSmallPhone ? 8 : 10,
+                    isSmallPhone ? 8 : 10,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,39 +81,39 @@ class ProductCard extends StatelessWidget {
                       Text(
                         product.name,
                         style: GoogleFonts.poppins(
-                          fontSize: isSmallPhone ? 15 : AppTheme.fontSizeXl,
+                          fontSize: isSmallPhone ? 13 : 15,
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textPrimary(context),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 3),
                       Text(
                         product.description,
                         style: GoogleFonts.inter(
-                          fontSize: isSmallPhone ? 11 : AppTheme.fontSizeSm,
+                          fontSize: isSmallPhone ? 10 : 11,
                           color: AppTheme.textSecondary(context),
-                          height: 1.4,
+                          height: 1.3,
                         ),
-                        maxLines: 2,
+                        maxLines: isSmallPhone ? 1 : 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (product.optionGroups.isNotEmpty)
+                      if (product.optionGroups.isNotEmpty && !isSmallPhone)
                         Padding(
-                          padding: const EdgeInsets.only(top: 6),
+                          padding: const EdgeInsets.only(top: 4),
                           child: Row(
                             children: [
                               Icon(
                                 Icons.tune,
-                                size: 14,
+                                size: 12,
                                 color: AppTheme.brandPurple.withValues(alpha: 0.8),
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 3),
                               Text(
                                 'Personalizável',
                                 style: GoogleFonts.inter(
-                                  fontSize: AppTheme.fontSizeXs,
+                                  fontSize: 10,
                                   color: AppTheme.brandPurple.withValues(alpha: 0.8),
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -121,37 +121,42 @@ class ProductCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                      const SizedBox(height: 10),
+                      const Spacer(),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            product.priceDisplay,
-                            style: GoogleFonts.poppins(
-                              fontSize: isSmallPhone ? 16 : AppTheme.fontSize2Xl,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.brandPurple,
+                          Flexible(
+                            child: Text(
+                              product.priceDisplay,
+                              style: GoogleFonts.poppins(
+                                fontSize: isSmallPhone ? 14 : 15,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.brandPurple,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 6),
                           Container(
-                            width: isSmallPhone ? 38 : 44,
-                            height: isSmallPhone ? 38 : 44,
+                            width: isSmallPhone ? 32 : 36,
+                            height: isSmallPhone ? 32 : 36,
                             decoration: BoxDecoration(
                               color: AppTheme.brandPurple,
-                              borderRadius: BorderRadius.circular(isSmallPhone ? 10 : 12),
+                              borderRadius: BorderRadius.circular(isSmallPhone ? 8 : 10),
                               boxShadow: [
                                 BoxShadow(
                                   color: AppTheme.brandPurple.withValues(alpha: 0.35),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
                             child: Icon(
                               Icons.add,
                               color: Colors.white,
-                              size: isSmallPhone ? 18 : 22,
+                              size: isSmallPhone ? 16 : 18,
                             ),
                           ),
                         ],
