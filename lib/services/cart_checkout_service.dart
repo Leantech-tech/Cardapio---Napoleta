@@ -214,9 +214,23 @@ class CartCheckoutService {
     OrderCheckoutData? checkoutData,
   }) async {
     final authProvider = context.read<AuthProvider>();
-    final rawPhoneNumber = authProvider.whatsappNumber.isNotEmpty
-        ? authProvider.whatsappNumber
-        : '5512988997924';
+
+    // Sempre busca o número mais atual da tabela empresa antes de enviar.
+    if (authProvider.whatsappNumber.isEmpty) {
+      await authProvider.refreshEmpresaData();
+    }
+
+    var rawPhoneNumber = authProvider.whatsappNumber;
+    if (rawPhoneNumber.isEmpty) {
+      if (!context.mounted) return;
+      _showSnackBar(
+        context,
+        'Número do WhatsApp da loja não configurado.',
+        Colors.orange[700],
+      );
+      return;
+    }
+
     final phoneNumber = rawPhoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
     final storeAddress = authProvider.storeAddress;
 

@@ -536,11 +536,14 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     bool isTablet,
     AuthProvider authProvider,
   ) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isSmallPhone = screenWidth < 360;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
-        isTablet ? 24 : 16,
+        isTablet ? 24 : (isSmallPhone ? 12 : 16),
         12,
-        isTablet ? 24 : 16,
+        isTablet ? 24 : (isSmallPhone ? 12 : 16),
         14,
       ),
       decoration: BoxDecoration(
@@ -557,8 +560,8 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               borderRadius: BorderRadius.circular(12),
               child: Image.asset(
                 'assets/images/logo.png',
-                height: isTablet ? 52 : 44,
-                width: isTablet ? 52 : 44,
+                height: isTablet ? 52 : (isSmallPhone ? 36 : 44),
+                width: isTablet ? 52 : (isSmallPhone ? 36 : 44),
                 fit: BoxFit.cover,
               ),
             ),
@@ -571,10 +574,12 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                 Text(
                   'Napoleta',
                   style: GoogleFonts.poppins(
-                    fontSize: isTablet ? 20 : 17,
+                    fontSize: isTablet ? 20 : (isSmallPhone ? 15 : 17),
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary(context),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -611,11 +616,13 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     bool isTablet,
     List<Category> categories,
   ) {
-    final sidebarWidth = isTablet ? 160.0 : 120.0;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isSmallPhone = screenWidth < 360;
+    final sidebarWidth = isTablet ? 160.0 : (isSmallPhone ? 92.0 : 120.0);
 
     return Container(
       width: sidebarWidth,
-      margin: const EdgeInsets.only(right: 12),
+      margin: EdgeInsets.only(right: isSmallPhone ? 8 : 12),
       decoration: BoxDecoration(
         color: AppTheme.surface(context),
         borderRadius: BorderRadius.only(
@@ -636,22 +643,28 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           bottomRight: Radius.circular(isTablet ? 20 : 16),
         ),
         child: ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+          padding: EdgeInsets.symmetric(
+            vertical: isSmallPhone ? 12 : 16,
+            horizontal: isSmallPhone ? 6 : 10,
+          ),
           itemCount: categories.length,
           itemBuilder: (context, index) {
             final category = categories[index];
             final isSelected = category.id == selectedCategoryId;
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: EdgeInsets.only(bottom: isSmallPhone ? 8 : 12),
               child: GestureDetector(
                 onTap: () => setState(() => selectedCategoryId = category.id),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeInOut,
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                  padding: EdgeInsets.symmetric(
+                    vertical: isSmallPhone ? 10 : 14,
+                    horizontal: isSmallPhone ? 6 : 10,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected ? AppTheme.brandPurple : AppTheme.inputBg(context),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(isSmallPhone ? 12 : 16),
                     border: isSelected
                         ? null
                         : Border.all(color: AppTheme.border(context)),
@@ -670,14 +683,14 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     children: [
                       Icon(
                         category.icon,
-                        size: isTablet ? 34 : 28,
+                        size: isTablet ? 34 : (isSmallPhone ? 22 : 28),
                         color: isSelected ? Colors.white : AppTheme.brandPurple,
                       ),
                       const SizedBox(height: 10),
                       Text(
                         category.displayName,
                         style: GoogleFonts.inter(
-                          fontSize: isTablet ? 14 : 12,
+                          fontSize: isTablet ? 14 : (isSmallPhone ? 10 : 12),
                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                           color: isSelected ? Colors.white : AppTheme.textPrimary(context),
                         ),
@@ -708,12 +721,15 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     MenuProvider menuProvider,
     double availableHeight,
   ) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isSmallPhone = screenWidth < 360;
+
     return Expanded(
       child: Container(
-        margin: EdgeInsets.only(right: useCompactCards ? 8 : 16),
+        margin: EdgeInsets.only(right: useCompactCards ? 8 : (isSmallPhone ? 10 : 16)),
         decoration: BoxDecoration(
           color: AppTheme.surface(context),
-          borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
+          borderRadius: BorderRadius.circular(isTablet ? 20 : (isSmallPhone ? 12 : 16)),
           boxShadow: [
             BoxShadow(
               color: AppTheme.shadow(context),
@@ -723,7 +739,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
+          borderRadius: BorderRadius.circular(isTablet ? 20 : (isSmallPhone ? 12 : 16)),
           child: RefreshIndicator(
             onRefresh: () async => menuProvider.refresh(),
             color: AppTheme.brandPurple,
@@ -733,16 +749,25 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    padding: EdgeInsets.fromLTRB(
+                      isSmallPhone ? 12 : 16,
+                      isSmallPhone ? 12 : 16,
+                      isSmallPhone ? 12 : 16,
+                      8,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          sectionTitle,
-                          style: GoogleFonts.poppins(
-                            fontSize: isTablet ? 22 : 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.textPrimary(context),
+                        Flexible(
+                          child: Text(
+                            sectionTitle,
+                            style: GoogleFonts.poppins(
+                              fontSize: isTablet ? 22 : (isSmallPhone ? 15 : 18),
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textPrimary(context),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Container(
@@ -819,15 +844,20 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   )
                 else if (isGrid)
                   SliverPadding(
-                    padding: EdgeInsets.fromLTRB(16, 8, useCompactCards ? 10 : 16, 32),
+                    padding: EdgeInsets.fromLTRB(
+                      isSmallPhone ? 12 : 16,
+                      8,
+                      useCompactCards ? 10 : (isSmallPhone ? 12 : 16),
+                      32,
+                    ),
                     sliver: SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
                         childAspectRatio: availableHeight < 500
                             ? 1.1
-                            : (useCompactCards ? 1.0 : 0.9),
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
+                            : (useCompactCards ? 1.0 : (isSmallPhone ? 0.82 : 0.9)),
+                        crossAxisSpacing: isSmallPhone ? 12 : 16,
+                        mainAxisSpacing: isSmallPhone ? 12 : 16,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -845,7 +875,12 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   )
                 else
                   SliverPadding(
-                    padding: EdgeInsets.fromLTRB(16, 8, useCompactCards ? 10 : 16, 32),
+                    padding: EdgeInsets.fromLTRB(
+                      isSmallPhone ? 12 : 16,
+                      8,
+                      useCompactCards ? 10 : (isSmallPhone ? 12 : 16),
+                      32,
+                    ),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {

@@ -21,8 +21,9 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isTablet = screenWidth >= 700;
-    final imageWidth = isTablet ? 160.0 : 130.0;
-    final imageHeight = isTablet ? 180.0 : 148.0;
+    final isSmallPhone = screenWidth < 360;
+    final imageWidth = isTablet ? 160.0 : (isSmallPhone ? 110.0 : 130.0);
+    final imageHeight = isTablet ? 180.0 : (isSmallPhone ? 128.0 : 148.0);
 
     return FadeInUp(
       duration: const Duration(milliseconds: 400),
@@ -67,7 +68,12 @@ class ProductCard extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  padding: EdgeInsets.fromLTRB(
+                    isSmallPhone ? 10 : 14,
+                    isSmallPhone ? 10 : 12,
+                    isSmallPhone ? 10 : 14,
+                    isSmallPhone ? 10 : 12,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -75,7 +81,7 @@ class ProductCard extends StatelessWidget {
                       Text(
                         product.name,
                         style: GoogleFonts.poppins(
-                          fontSize: AppTheme.fontSizeXl,
+                          fontSize: isSmallPhone ? 15 : AppTheme.fontSizeXl,
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textPrimary(context),
                         ),
@@ -86,7 +92,7 @@ class ProductCard extends StatelessWidget {
                       Text(
                         product.description,
                         style: GoogleFonts.inter(
-                          fontSize: AppTheme.fontSizeSm,
+                          fontSize: isSmallPhone ? 11 : AppTheme.fontSizeSm,
                           color: AppTheme.textSecondary(context),
                           height: 1.4,
                         ),
@@ -123,17 +129,17 @@ class ProductCard extends StatelessWidget {
                           Text(
                             product.priceDisplay,
                             style: GoogleFonts.poppins(
-                              fontSize: AppTheme.fontSize2Xl,
+                              fontSize: isSmallPhone ? 16 : AppTheme.fontSize2Xl,
                               fontWeight: FontWeight.w800,
                               color: AppTheme.brandPurple,
                             ),
                           ),
                           Container(
-                            width: 44,
-                            height: 44,
+                            width: isSmallPhone ? 38 : 44,
+                            height: isSmallPhone ? 38 : 44,
                             decoration: BoxDecoration(
                               color: AppTheme.brandPurple,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(isSmallPhone ? 10 : 12),
                               boxShadow: [
                                 BoxShadow(
                                   color: AppTheme.brandPurple.withValues(alpha: 0.35),
@@ -142,10 +148,10 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.add,
                               color: Colors.white,
-                              size: 22,
+                              size: isSmallPhone ? 18 : 22,
                             ),
                           ),
                         ],

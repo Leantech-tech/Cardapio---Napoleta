@@ -83,8 +83,9 @@ class _CartViewState extends State<CartView> {
   Widget _buildCartItemImage(BuildContext context, String imagePath) {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isTablet = screenWidth >= 700;
-    final imageSize = isTablet ? 90.0 : 76.0;
-    final iconSize = isTablet ? 34.0 : 28.0;
+    final isSmallPhone = screenWidth < 360;
+    final imageSize = isTablet ? 90.0 : (isSmallPhone ? 60.0 : 76.0);
+    final iconSize = isTablet ? 34.0 : (isSmallPhone ? 22.0 : 28.0);
 
     if (imagePath.isEmpty) {
       return Container(
@@ -322,12 +323,15 @@ class _CartViewState extends State<CartView> {
     CartProvider cart,
     dynamic item,
   ) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isSmallPhone = screenWidth < 360;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(isSmallPhone ? 10 : 14),
       decoration: BoxDecoration(
         color: AppTheme.cardBg(context),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(isSmallPhone ? 14 : 18),
         border: Border.all(color: AppTheme.border(context).withValues(alpha: 0.6)),
         boxShadow: [
           BoxShadow(
@@ -343,7 +347,7 @@ class _CartViewState extends State<CartView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildCartItemImage(context, item.imagePath),
-          const SizedBox(width: 14),
+          SizedBox(width: isSmallPhone ? 10 : 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,7 +355,7 @@ class _CartViewState extends State<CartView> {
                 Text(
                   item.name,
                   style: GoogleFonts.poppins(
-                    fontSize: 15,
+                    fontSize: isSmallPhone ? 13 : 15,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary(context),
                   ),
@@ -364,7 +368,7 @@ class _CartViewState extends State<CartView> {
                     child: Text(
                       item.selectedOptionsDisplay,
                       style: GoogleFonts.inter(
-                        fontSize: 12,
+                        fontSize: isSmallPhone ? 10 : 12,
                         color: AppTheme.textSecondary(context),
                       ),
                       maxLines: 1,
@@ -377,7 +381,7 @@ class _CartViewState extends State<CartView> {
                     child: Text(
                       'Obs: ${item.observation}',
                       style: GoogleFonts.inter(
-                        fontSize: 12,
+                        fontSize: isSmallPhone ? 10 : 12,
                         color: AppTheme.textSecondary(context),
                         fontStyle: FontStyle.italic,
                       ),
@@ -391,24 +395,25 @@ class _CartViewState extends State<CartView> {
                     Container(
                       decoration: BoxDecoration(
                         color: AppTheme.inputBg(context),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(isSmallPhone ? 8 : 10),
                         border: Border.all(color: AppTheme.border(context)),
                       ),
                       child: Row(
                         children: [
                           _buildIconButton(
                             icon: Icons.remove,
+                            isSmallPhone: isSmallPhone,
                             onTap: () => cart.updateQuantity(
                               item.id,
                               item.quantity - 1,
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: EdgeInsets.symmetric(horizontal: isSmallPhone ? 8 : 12),
                             child: Text(
                               '${item.quantity}',
                               style: GoogleFonts.poppins(
-                                fontSize: 14,
+                                fontSize: isSmallPhone ? 12 : 14,
                                 fontWeight: FontWeight.w700,
                                 color: AppTheme.textPrimary(context),
                               ),
@@ -416,6 +421,7 @@ class _CartViewState extends State<CartView> {
                           ),
                           _buildIconButton(
                             icon: Icons.add,
+                            isSmallPhone: isSmallPhone,
                             onTap: () => cart.updateQuantity(
                               item.id,
                               item.quantity + 1,
@@ -428,7 +434,7 @@ class _CartViewState extends State<CartView> {
                     Text(
                       _formatPrice(item.total),
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
+                        fontSize: isSmallPhone ? 14 : 16,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.brandPurple,
                       ),
@@ -443,9 +449,11 @@ class _CartViewState extends State<CartView> {
             icon: Icon(
               Icons.delete_outline,
               color: AppTheme.textSecondary(context),
-              size: 22,
+              size: isSmallPhone ? 18 : 22,
             ),
             splashRadius: 20,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
           ),
         ],
       ),
@@ -455,23 +463,32 @@ class _CartViewState extends State<CartView> {
   Widget _buildIconButton({
     required IconData icon,
     required VoidCallback onTap,
+    bool isSmallPhone = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: EdgeInsets.all(isSmallPhone ? 6 : 8),
         child: Icon(
           icon,
           color: AppTheme.brandPurple,
-          size: 18,
+          size: isSmallPhone ? 15 : 18,
         ),
       ),
     );
   }
 
   Widget _buildBottomBar(BuildContext context, CartProvider cart) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isSmallPhone = screenWidth < 360;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      padding: EdgeInsets.fromLTRB(
+        isSmallPhone ? 16 : 20,
+        isSmallPhone ? 12 : 16,
+        isSmallPhone ? 16 : 20,
+        isSmallPhone ? 16 : 24,
+      ),
       decoration: BoxDecoration(
         color: AppTheme.surface(context),
         border: Border(
@@ -495,7 +512,7 @@ class _CartViewState extends State<CartView> {
                 Text(
                   '${cart.totalItems} item${cart.totalItems != 1 ? 's' : ''}',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: isSmallPhone ? 12 : 14,
                     color: AppTheme.textSecondary(context),
                   ),
                 ),
@@ -504,14 +521,14 @@ class _CartViewState extends State<CartView> {
                     Text(
                       'Total: ',
                       style: GoogleFonts.inter(
-                        fontSize: 15,
+                        fontSize: isSmallPhone ? 13 : 15,
                         color: AppTheme.textPrimary(context),
                       ),
                     ),
                     Text(
                       _formatPrice(cart.totalPrice),
                       style: GoogleFonts.poppins(
-                        fontSize: 22,
+                        fontSize: isSmallPhone ? 18 : 22,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.brandPurple,
                       ),
@@ -526,16 +543,16 @@ class _CartViewState extends State<CartView> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.brandPurple,
                 foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 56),
+                minimumSize: Size(double.infinity, isSmallPhone ? 48 : 56),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(isSmallPhone ? 14 : 16),
                 ),
                 elevation: 0,
               ),
               child: Text(
                 'Finalizar Pedido',
                 style: GoogleFonts.poppins(
-                  fontSize: 17,
+                  fontSize: isSmallPhone ? 15 : 17,
                   fontWeight: FontWeight.w600,
                 ),
               ),

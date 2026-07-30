@@ -269,13 +269,23 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final isSmallPhone = screenWidth < 360;
+    final maxWidth = screenWidth < 420 ? screenWidth * 0.94 : 420.0;
+    final maxHeight = screenHeight * 0.92;
+
     return Dialog(
       backgroundColor: AppTheme.surface(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isSmallPhone ? 10 : 20,
+        vertical: isSmallPhone ? 14 : 24,
+      ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420, maxHeight: 720),
+        constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(isSmallPhone ? 16 : 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

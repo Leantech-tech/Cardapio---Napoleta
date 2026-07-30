@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/api_config.dart';
 import '../services/api_client.dart';
+import '../services/empresa_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   static const String _keyUserId = 'auth_user_id';
@@ -40,10 +41,10 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    _useComandaFeature = prefs.getBool(_keyUseComandaFeature) ?? true;
+    _useComandaFeature = prefs.getBool(_keyUseComandaFeature) ?? false;
     _useTotenMode = prefs.getBool(_keyUseTotenMode) ?? false;
     _storeAddress = prefs.getString(_keyStoreAddress) ?? '';
-    _whatsappNumber = prefs.getString(_keyWhatsappNumber) ?? '5512988997924';
+    _whatsappNumber = prefs.getString(_keyWhatsappNumber) ?? '';
     notifyListeners();
   }
 
@@ -54,6 +55,7 @@ class AuthProvider extends ChangeNotifier {
     await ApiClient().init();
 
     await loadSettings();
+    await refreshEmpresaData();
 
     if (ApiClient().isAuthenticated) {
       await _fetchMe();
@@ -82,6 +84,34 @@ class AuthProvider extends ChangeNotifier {
       await ApiClient().clearToken();
       _perfil = null;
       _empresa = null;
+    }
+  }
+
+  /// Busca os dados atualizados da tabela `empresa` e sincroniza o WhatsApp.
+  ///
+  /// Sempre que o número for alterado no banco de dados, essa chamada garante
+  /// que o app passará a usar o novo número nas próximas mensagens.
+  Future<void> refreshEmpresaData() async {
+    try {
+      final empresa = await EmpresaService().buscarPorId(ApiConfig.empresaId);
+      if (empresa == null) {
+        debugPrint('AuthProvider: empresa ${ApiConfig.empresaId} não encontrada');
+        return;
+      }
+
+      _empresa = empresa;
+
+      final whatsapp = empresa['whatsapp'] as String?;
+      if (whatsapp != null && whatsapp.trim().isNotEmpty) {
+        await setWhatsappNumber(whatsapp.trim());
+      }
+
+      final endereco = empresa['endereco'] as String?;
+      if (endereco != null) {
+        await setStoreAddress(endereco.trim());
+      }
+    } catch (e) {
+      debugPrint('AuthProvider: erro ao atualizar dados da empresa: $e');
     }
   }
 
@@ -119,6 +149,8 @@ class AuthProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyUserId, userId);
       await prefs.setString(_keyUserName, userName);
+
+      await refreshEmpresaData();
     } on ApiException catch (e) {
       _error = e.message ?? 'Erro ao fazer login';
       throw Exception(_error);

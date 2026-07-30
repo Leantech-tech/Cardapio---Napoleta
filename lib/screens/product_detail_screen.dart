@@ -292,6 +292,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
   Widget _buildProductInfo(BuildContext context) {
     final hasOptions = widget.product.optionGroups.isNotEmpty;
+    final isSmallPhone = MediaQuery.sizeOf(context).width < 360;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +300,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         Text(
           widget.product.name,
           style: GoogleFonts.poppins(
-            fontSize: 22,
+            fontSize: isSmallPhone ? 18 : 22,
             fontWeight: FontWeight.w700,
             color: AppTheme.textPrimary(context),
           ),
@@ -310,7 +311,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             Text(
               widget.product.priceDisplay,
               style: GoogleFonts.poppins(
-                fontSize: 22,
+                fontSize: isSmallPhone ? 18 : 22,
                 fontWeight: FontWeight.w800,
                 color: AppTheme.brandPurple,
               ),
@@ -321,7 +322,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                 child: Text(
                   '+ opções',
                   style: GoogleFonts.inter(
-                    fontSize: 13,
+                    fontSize: isSmallPhone ? 11 : 13,
                     color: AppTheme.textSecondary(context),
                   ),
                 ),
@@ -488,6 +489,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   Widget _buildQuantityStepper(BuildContext context) {
+    final isSmallPhone = MediaQuery.sizeOf(context).width < 360;
+
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.inputBg(context),
@@ -506,11 +509,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             },
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
+            padding: EdgeInsets.symmetric(horizontal: isSmallPhone ? 14 : 18),
             child: Text(
               '$quantity',
               style: GoogleFonts.poppins(
-                fontSize: 18,
+                fontSize: isSmallPhone ? 15 : 18,
                 fontWeight: FontWeight.w700,
                 color: AppTheme.textPrimary(context),
               ),
@@ -830,10 +833,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {
+    final isSmallPhone = MediaQuery.sizeOf(context).width < 360;
+
     return Text(
       title,
       style: GoogleFonts.poppins(
-        fontSize: 16,
+        fontSize: isSmallPhone ? 14 : 16,
         fontWeight: FontWeight.w700,
         color: AppTheme.textPrimary(context),
       ),
@@ -843,6 +848,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   @override
   Widget build(BuildContext context) {
     final canAdd = _canAddToCart();
+    final isSmallPhone = MediaQuery.sizeOf(context).width < 360;
 
     return Scaffold(
       backgroundColor: AppTheme.background(context),
@@ -870,13 +876,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           final maxHeight = constraints.maxHeight;
           final imageSize = isWide
               ? (maxWidth * 0.30).clamp(200.0, 300.0).toDouble()
-              : (maxWidth * 0.55).clamp(200.0, 280.0).toDouble();
+              : (maxWidth * 0.55).clamp(isSmallPhone ? 140.0 : 160.0, isSmallPhone ? 220.0 : 280.0).toDouble();
           final clampedImageSize = maxHeight > 0
-              ? imageSize.clamp(160.0, maxHeight * 0.45)
+              ? imageSize.clamp(isSmallPhone ? 140.0 : 160.0, maxHeight * 0.40)
               : imageSize;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(isSmallPhone ? 16 : 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -947,7 +953,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         },
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+        padding: EdgeInsets.fromLTRB(
+          isSmallPhone ? 16 : 20,
+          isSmallPhone ? 12 : 14,
+          isSmallPhone ? 16 : 20,
+          isSmallPhone ? 16 : 20,
+        ),
         decoration: BoxDecoration(
           color: AppTheme.surface(context),
           border: Border(
@@ -971,7 +982,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   child: Text(
                     _getOptionDisplayName(),
                     style: GoogleFonts.inter(
-                      fontSize: 12,
+                      fontSize: isSmallPhone ? 10 : 12,
                       color: AppTheme.textSecondary(context),
                     ),
                     textAlign: TextAlign.center,
@@ -984,9 +995,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _added ? Colors.green[600] : AppTheme.brandPurple,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 58),
+                  minimumSize: Size(double.infinity, isSmallPhone ? 50 : 58),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(isSmallPhone ? 14 : 16),
                   ),
                   elevation: 0,
                 ),
@@ -997,12 +1008,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           key: const ValueKey('added'),
                           children: [
-                            const Icon(Icons.check_circle, size: 24),
+                            Icon(Icons.check_circle, size: isSmallPhone ? 20 : 24),
                             const SizedBox(width: 8),
                             Text(
                               'Adicionado!',
                               style: GoogleFonts.poppins(
-                                fontSize: 17,
+                                fontSize: isSmallPhone ? 15 : 17,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1015,7 +1026,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             Text(
                               'Adicionar',
                               style: GoogleFonts.poppins(
-                                fontSize: 17,
+                                fontSize: isSmallPhone ? 15 : 17,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1032,7 +1043,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                               child: Text(
                                 'R\$ ${total.toStringAsFixed(2).replaceAll('.', ',')}',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 15,
+                                  fontSize: isSmallPhone ? 13 : 15,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -1052,14 +1063,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     required IconData icon,
     required VoidCallback onTap,
   }) {
+    final isSmallPhone = MediaQuery.sizeOf(context).width < 360;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(isSmallPhone ? 8 : 12),
         child: Icon(
           icon,
           color: AppTheme.brandPurple,
-          size: 22,
+          size: isSmallPhone ? 18 : 22,
         ),
       ),
     );
