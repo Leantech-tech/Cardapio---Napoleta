@@ -244,6 +244,9 @@ class CartCheckoutService {
 
     buffer.writeln();
     buffer.writeln('Total de itens: ${cart.totalItems}');
+    buffer.writeln(
+      'Valor total: R\$ ${cart.totalPrice.toStringAsFixed(2).replaceAll('.', ',')}',
+    );
 
     if (checkoutData != null) {
       buffer.writeln();
