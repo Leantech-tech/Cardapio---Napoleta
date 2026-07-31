@@ -44,6 +44,7 @@ class MenuScreen extends StatefulWidget {
 class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   String selectedCategoryId = '';
   bool _isCartOpen = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Controle do gesto secreto para saída administrativa do modo quiosque.
   int _adminTapCount = 0;
@@ -534,6 +535,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   Widget _buildHeader(
     BuildContext context,
     bool isTablet,
+    bool isMobile,
     AuthProvider authProvider,
   ) {
     final screenWidth = MediaQuery.sizeOf(context).width;
@@ -541,10 +543,10 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
 
     return Container(
       padding: EdgeInsets.fromLTRB(
-        isTablet ? 24 : (isSmallPhone ? 12 : 16),
+        isTablet ? 24 : (isSmallPhone ? 10 : 14),
+        10,
+        isTablet ? 24 : (isSmallPhone ? 10 : 14),
         12,
-        isTablet ? 24 : (isSmallPhone ? 12 : 16),
-        14,
       ),
       decoration: BoxDecoration(
         color: AppTheme.surface(context),
@@ -554,19 +556,32 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       ),
       child: Row(
         children: [
+          if (isMobile)
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: IconButton(
+                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                icon: Icon(
+                  Icons.menu_rounded,
+                  color: AppTheme.textPrimary(context),
+                ),
+                tooltip: 'Categorias',
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
           GestureDetector(
             onTap: _handleAdminLogoTap,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.asset(
                 'assets/images/logo.png',
-                height: isTablet ? 52 : (isSmallPhone ? 36 : 44),
-                width: isTablet ? 52 : (isSmallPhone ? 36 : 44),
+                height: isTablet ? 52 : (isSmallPhone ? 34 : 40),
+                width: isTablet ? 52 : (isSmallPhone ? 34 : 40),
                 fit: BoxFit.cover,
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,6 +609,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   color: AppTheme.textSecondary(context),
                 ),
                 tooltip: 'Configurações',
+                visualDensity: isMobile ? VisualDensity.compact : VisualDensity.standard,
               ),
               if (authProvider.useComandaFeature)
                 IconButton(
@@ -603,6 +619,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     color: AppTheme.textSecondary(context),
                   ),
                   tooltip: 'Consultar Comanda',
+                  visualDensity: isMobile ? VisualDensity.compact : VisualDensity.standard,
                 ),
             ],
           ),
@@ -704,6 +721,98 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryDrawer(
+    BuildContext context,
+    List<Category> categories,
+  ) {
+    return Drawer(
+      backgroundColor: AppTheme.surface(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      height: 40,
+                      width: 40,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Categorias',
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary(context),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: AppTheme.textSecondary(context),
+                    ),
+                    tooltip: 'Fechar',
+                  ),
+                ],
+              ),
+            ),
+            Divider(color: AppTheme.border(context)),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  final category = categories[index];
+                  final isSelected = category.id == selectedCategoryId;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      leading: Icon(
+                        category.icon,
+                        color: isSelected ? AppTheme.brandPurple : AppTheme.textSecondary(context),
+                      ),
+                      title: Text(
+                        category.displayName,
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                          color: isSelected ? AppTheme.brandPurple : AppTheme.textPrimary(context),
+                        ),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      tileColor: isSelected ? AppTheme.brandPurple.withValues(alpha: 0.08) : null,
+                      selectedTileColor: AppTheme.brandPurple.withValues(alpha: 0.12),
+                      selected: isSelected,
+                      onTap: () {
+                        setState(() => selectedCategoryId = category.id);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -995,6 +1104,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               final width = constraints.maxWidth;
               final isTablet = width >= 700;
               final isDesktop = width >= 1100;
+              final isMobile = width < 700;
               final useCompactCards = isTablet && !isDesktop;
               final crossAxisCount = isDesktop ? 3 : (useCompactCards ? 1 : (isTablet ? 2 : 1));
               final isGrid = crossAxisCount > 1;
@@ -1002,11 +1112,15 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               return PopScope(
                 canPop: false,
                 child: Scaffold(
+                  key: _scaffoldKey,
                   backgroundColor: AppTheme.background(context),
+                  drawer: isMobile
+                      ? _buildCategoryDrawer(context, categories)
+                      : null,
                   body: SafeArea(
                     child: Column(
                       children: [
-                        _buildHeader(context, isTablet, authProvider),
+                        _buildHeader(context, isTablet, isMobile, authProvider),
                         Expanded(
                           child: categories.isEmpty
                               ? Center(
@@ -1060,11 +1174,12 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                               : Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _buildCategorySidebar(
-                                      context,
-                                      isTablet,
-                                      categories,
-                                    ),
+                                    if (!isMobile)
+                                      _buildCategorySidebar(
+                                        context,
+                                        isTablet,
+                                        categories,
+                                      ),
                                     _buildProductsArea(
                                       context,
                                       isTablet,
