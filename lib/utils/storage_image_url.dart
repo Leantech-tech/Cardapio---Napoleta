@@ -15,10 +15,16 @@ class StorageImageUrl {
 
     final imageUri = Uri.tryParse(originalUrl);
     final storageUri = Uri.tryParse(ApiConfig.storageEndpoint);
-    if (imageUri == null ||
-        storageUri == null ||
-        imageUri.host.isEmpty ||
-        imageUri.host.toLowerCase() != storageUri.host.toLowerCase()) {
+    if (imageUri == null || storageUri == null || imageUri.host.isEmpty) {
+      return originalUrl;
+    }
+
+    final imageHost = imageUri.host.toLowerCase();
+    final storageHost = storageUri.host.toLowerCase();
+    final isStorageUrl = imageHost == storageHost ||
+        imageHost.endsWith('.$storageHost');
+
+    if (!isStorageUrl) {
       return originalUrl;
     }
 
