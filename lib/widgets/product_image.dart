@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
+import '../utils/storage_image_url.dart';
 import 'adaptive_image.dart';
 
 class ProductImage extends StatelessWidget {
@@ -62,22 +63,24 @@ class ProductImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = _style;
 
+    final imageUrl = StorageImageUrl.resolve(product.imagePath);
+
     Widget image;
-    if (product.imagePath.isEmpty) {
+    if (imageUrl.isEmpty) {
       image = SizedBox.expand(
         child: _Placeholder(style: style, iconSize: placeholderSize),
       );
-    } else if (product.imagePath.startsWith('http')) {
+    } else if (imageUrl.startsWith('http')) {
       image = AdaptiveNetworkImage(
-        key: ValueKey(product.imagePath),
-        imageUrl: product.imagePath,
+        key: ValueKey(imageUrl),
+        imageUrl: imageUrl,
         fit: fit,
         placeholder: (context) => _Placeholder(style: style, iconSize: placeholderSize),
         errorBuilder: (context, error) => _Placeholder(style: style, iconSize: placeholderSize),
       );
     } else {
       image = Image.asset(
-        product.imagePath,
+        imageUrl,
         fit: fit,
         errorBuilder: (context, error, stackTrace) => _Placeholder(style: style, iconSize: placeholderSize),
       );

@@ -16,6 +16,7 @@ import '../models/order_checkout_data.dart';
 import '../theme/app_theme.dart';
 import '../data/api_config.dart';
 import '../widgets/screensaver_carousel.dart';
+import '../widgets/category_image.dart';
 import '../widgets/product_card.dart';
 import '../widgets/login_sheet.dart';
 import '../widgets/app_config_sheet.dart';
@@ -151,6 +152,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       context,
       initialStep: 2,
       tipoEntregaInicial: TipoEntrega.retirada,
+      isTotem: true,
       onBack: () async {
         Navigator.of(context).pop();
         await Future.delayed(const Duration(milliseconds: 100));
@@ -698,10 +700,11 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        category.icon,
+                      CategoryImage(
+                        category: category,
                         size: isTablet ? 34 : (isSmallPhone ? 20 : 24),
-                        color: isSelected ? Colors.white : AppTheme.brandPurple,
+                        borderRadius: BorderRadius.circular(isTablet ? 8 : (isSmallPhone ? 5 : 6)),
+                        iconColor: isSelected ? Colors.white : AppTheme.brandPurple,
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -785,10 +788,12 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
-                      leading: Icon(
-                        category.icon,
-                        color: isSelected ? AppTheme.brandPurple : AppTheme.textSecondary(context),
-                      ),
+                      leading: CategoryImage(
+                          category: category,
+                          size: 28,
+                          borderRadius: BorderRadius.circular(6),
+                          iconColor: isSelected ? AppTheme.brandPurple : AppTheme.textSecondary(context),
+                        ),
                       title: Text(
                         category.displayName,
                         style: GoogleFonts.inter(
@@ -1253,7 +1258,10 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   if (authProvider.useTotenMode && checkoutProvider.hasCheckoutData) {
                     checkoutData = checkoutProvider.checkoutData;
                   } else {
-                    checkoutData = await OrderCheckoutDialog.show(context);
+                    checkoutData = await OrderCheckoutDialog.show(
+                      context,
+                      isTotem: authProvider.useTotenMode,
+                    );
                   }
 
                   if (checkoutData == null || !context.mounted) return;

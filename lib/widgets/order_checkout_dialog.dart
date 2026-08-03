@@ -12,12 +12,14 @@ class OrderCheckoutDialog extends StatefulWidget {
   final int initialStep;
   final TipoEntrega? tipoEntregaInicial;
   final VoidCallback? onBack;
+  final bool isTotem;
 
   const OrderCheckoutDialog({
     super.key,
     this.initialStep = 1,
     this.tipoEntregaInicial,
     this.onBack,
+    this.isTotem = false,
   });
 
   static Future<OrderCheckoutData?> show(
@@ -25,6 +27,7 @@ class OrderCheckoutDialog extends StatefulWidget {
     int initialStep = 1,
     TipoEntrega? tipoEntregaInicial,
     VoidCallback? onBack,
+    bool isTotem = false,
   }) async {
     return showDialog<OrderCheckoutData>(
       context: context,
@@ -33,6 +36,7 @@ class OrderCheckoutDialog extends StatefulWidget {
         initialStep: initialStep,
         tipoEntregaInicial: tipoEntregaInicial,
         onBack: onBack,
+        isTotem: isTotem,
       ),
     );
   }
@@ -104,6 +108,7 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
       setState(() {
         _customerLoaded = customer;
         _isLoadingCustomer = false;
+        _error = customer == null ? 'CPF incorreto' : null;
       });
 
       if (customer != null) {
@@ -579,6 +584,8 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
             final numeros = value.replaceAll(RegExp(r'[^0-9]'), '');
             if (numeros.length == 11 && !_isLoadingCustomer) {
               _buscarClientePorCpf();
+            } else if (_error != null && numeros.length < 11) {
+              setState(() => _error = null);
             }
           },
         ),
@@ -672,7 +679,7 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
                     ),
                   )
                 : Text(
-                    'Confirmar pedido',
+                    widget.isTotem ? 'Identificar cliente' : 'Confirmar pedido',
                     style: GoogleFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

@@ -4,21 +4,25 @@ class Category {
   final String id;
   final String name;
   final IconData icon;
+  final String imagePath;
 
   Category({
     required this.id,
     required this.name,
     required this.icon,
+    this.imagePath = '',
   });
 
   String get displayName => name.trim().replaceAll(RegExp(r'\.+$'), '');
 
   factory Category.fromJson(Map<String, dynamic> json) {
     final nome = json['nome'] as String? ?? 'Sem nome';
+    final fotoUrl = json['foto_url'] as String?;
     return Category(
       id: json['id'].toString(),
       name: nome,
       icon: _iconFromName(nome),
+      imagePath: (fotoUrl != null && fotoUrl.isNotEmpty) ? fotoUrl : '',
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
+import '../utils/storage_image_url.dart';
 import 'adaptive_image.dart';
 
 class ComandaViewerSheet extends StatelessWidget {
@@ -161,7 +162,9 @@ class ComandaViewerSheet extends StatelessWidget {
                   final observacao = item['observacao'] as String?;
                   final produto = item['produto'] as Map<String, dynamic>?;
                   final nomeProduto = produto?['nome'] as String? ?? 'Produto';
-                  final fotoUrl = produto?['foto_url'] as String? ?? '';
+                  final fotoUrl = StorageImageUrl.resolve(
+                    produto?['foto_url'] as String? ?? '',
+                  );
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),

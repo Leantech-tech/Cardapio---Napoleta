@@ -270,6 +270,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           child: ProductImage(
             product: widget.product,
             fit: BoxFit.cover,
+            placeholderSize: 56,
           ),
         ),
       ),

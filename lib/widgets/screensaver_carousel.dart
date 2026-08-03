@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' show max;
 import 'package:flutter/material.dart';
 import '../models/product.dart';
+import '../utils/storage_image_url.dart';
 
 /// Carrossel em tela cheia que funciona como screensaver.
 /// As imagens são exibidas sem cortar (BoxFit.contain).
@@ -72,21 +73,26 @@ class _ScreensaverCarouselState extends State<ScreensaverCarousel> {
   }
 
   Widget _buildImage(String imagePath) {
-    final imageWidget = imagePath.startsWith('http')
+    final resolvedUrl = StorageImageUrl.resolve(imagePath);
+    final imageWidget = resolvedUrl.startsWith('http')
         ? Image.network(
-            imagePath,
+            resolvedUrl,
             fit: BoxFit.contain,
+            width: double.infinity,
+            height: double.infinity,
             errorBuilder: (_, _, _) => _fallbackImage(),
           )
         : Image.asset(
-            imagePath,
+            resolvedUrl,
             fit: BoxFit.contain,
+            width: double.infinity,
+            height: double.infinity,
             errorBuilder: (_, _, _) => _fallbackImage(),
           );
 
     return Container(
       color: Colors.black,
-      child: Center(child: imageWidget),
+      child: SizedBox.expand(child: imageWidget),
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/product.dart';
 import '../theme/app_theme.dart';
+import '../utils/storage_image_url.dart';
 
 class HeroCarousel extends StatefulWidget {
   final List<Product>? products;
@@ -86,9 +87,11 @@ class _HeroCarouselState extends State<HeroCarousel> {
   }
 
   Widget _buildBannerImage(String imagePath) {
-    if (imagePath.startsWith('http')) {
+    final resolvedUrl = StorageImageUrl.resolve(imagePath);
+
+    if (resolvedUrl.startsWith('http')) {
       return Image.network(
-        imagePath,
+        resolvedUrl,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => Container(
           color: AppTheme.brandPurple,
@@ -104,7 +107,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
     }
 
     return Image.asset(
-      imagePath,
+      resolvedUrl,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => Container(
         color: AppTheme.brandPurple,

@@ -6,6 +6,7 @@ import '../models/product_option.dart';
 import '../providers/cart_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/option_group_helper.dart';
+import '../widgets/product_image.dart';
 
 class ProductDetailSheet extends StatefulWidget {
   final Product product;
@@ -195,48 +196,15 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   }
 
   Widget _buildProductImage(BuildContext context, double imageHeight) {
-    if (widget.product.imagePath.isEmpty) {
-      return Container(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: SizedBox(
         height: imageHeight,
-        color: AppTheme.inputBg(context),
-        child: Icon(
-          Icons.image_not_supported,
-          color: AppTheme.textSecondary(context),
-          size: 48,
-        ),
-      );
-    }
-
-    if (widget.product.imagePath.startsWith('http')) {
-      return Image.network(
-        widget.product.imagePath,
         width: double.infinity,
-        height: imageHeight,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
-          height: imageHeight,
-          color: AppTheme.inputBg(context),
-          child: Icon(
-            Icons.image_not_supported,
-            color: AppTheme.textSecondary(context),
-            size: 48,
-          ),
-        ),
-      );
-    }
-
-    return Image.asset(
-      widget.product.imagePath,
-      width: double.infinity,
-      height: imageHeight,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => Container(
-        height: imageHeight,
-        color: AppTheme.inputBg(context),
-        child: Icon(
-          Icons.image_not_supported,
-          color: AppTheme.textSecondary(context),
-          size: 48,
+        child: ProductImage(
+          product: widget.product,
+          fit: BoxFit.cover,
+          placeholderSize: 64,
         ),
       ),
     );

@@ -11,6 +11,7 @@ import '../services/barcode_scanner_service.dart';
 import '../services/cart_checkout_service.dart';
 import '../widgets/adaptive_image.dart';
 import '../utils/auth_helper.dart';
+import '../utils/storage_image_url.dart';
 import '../widgets/order_checkout_dialog.dart';
 
 class CartView extends StatefulWidget {
@@ -81,13 +82,14 @@ class _CartViewState extends State<CartView> {
   }
 
   Widget _buildCartItemImage(BuildContext context, String imagePath) {
+    final resolvedUrl = StorageImageUrl.resolve(imagePath);
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isTablet = screenWidth >= 700;
     final isSmallPhone = screenWidth < 360;
     final imageSize = isTablet ? 90.0 : (isSmallPhone ? 60.0 : 76.0);
     final iconSize = isTablet ? 34.0 : (isSmallPhone ? 22.0 : 28.0);
 
-    if (imagePath.isEmpty) {
+    if (resolvedUrl.isEmpty) {
       return Container(
         width: imageSize,
         height: imageSize,
@@ -103,12 +105,12 @@ class _CartViewState extends State<CartView> {
       );
     }
 
-    if (imagePath.startsWith('http')) {
+    if (resolvedUrl.startsWith('http')) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: AdaptiveNetworkImage(
-          key: ValueKey(imagePath),
-          imageUrl: imagePath,
+          key: ValueKey(resolvedUrl),
+          imageUrl: resolvedUrl,
           width: imageSize,
           height: imageSize,
           fit: BoxFit.cover,
@@ -143,7 +145,7 @@ class _CartViewState extends State<CartView> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Image.asset(
-        imagePath,
+        resolvedUrl,
         width: imageSize,
         height: imageSize,
         fit: BoxFit.cover,

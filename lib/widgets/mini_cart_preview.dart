@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/cart_item.dart';
 import '../providers/cart_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/storage_image_url.dart';
 import 'adaptive_image.dart';
 
 class MiniCartPreview extends StatelessWidget {
@@ -21,7 +22,9 @@ class MiniCartPreview extends StatelessWidget {
   }
 
   Widget _buildImage(BuildContext context, String imagePath) {
-    if (imagePath.isEmpty) {
+    final resolvedUrl = StorageImageUrl.resolve(imagePath);
+
+    if (resolvedUrl.isEmpty) {
       return Container(
         width: 64,
         height: 64,
@@ -37,11 +40,11 @@ class MiniCartPreview extends StatelessWidget {
       );
     }
 
-    if (imagePath.startsWith('http')) {
+    if (resolvedUrl.startsWith('http')) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: AdaptiveNetworkImage(
-          imageUrl: imagePath,
+          imageUrl: resolvedUrl,
           width: 64,
           height: 64,
           fit: BoxFit.cover,
@@ -66,7 +69,7 @@ class MiniCartPreview extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Image.asset(
-        imagePath,
+        resolvedUrl,
         width: 64,
         height: 64,
         fit: BoxFit.cover,
