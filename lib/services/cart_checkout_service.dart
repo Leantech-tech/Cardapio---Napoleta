@@ -7,6 +7,7 @@ import '../models/order_checkout_data.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../services/comanda_service.dart';
+import '../services/delivery_pedido_service.dart';
 import '../services/print_queue_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/barcode_scanner_screen.dart';
@@ -213,6 +214,27 @@ class CartCheckoutService {
     VoidCallback? onSuccess,
     OrderCheckoutData? checkoutData,
   }) async {
+    // Persiste o pedido nas tabelas delivery antes de enviar por WhatsApp.
+    // Itens sem modificador ficam apenas em delivery_pedido + delivery_pedido_item;
+    // itens com modificador também preenchem delivery_pedido_item_modificador.
+    if (checkoutData != null) {
+      try {
+        await DeliveryPedidoService().salvarPedido(
+          cart.items,
+          checkoutData,
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        _showSnackBar(
+          context,
+          'Erro ao salvar pedido no delivery: $e',
+          Colors.red[600],
+        );
+        return;
+      }
+    }
+
+    if (!context.mounted) return;
     final authProvider = context.read<AuthProvider>();
 
     // Sempre busca o número mais atual da tabela empresa antes de enviar.

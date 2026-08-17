@@ -136,3 +136,83 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO products (id, name, description, price, image_url, category_id, ingredients, is_active, rating, prep_time_minutes, review_count, option_groups) VALUES
 (13, 'Combo Tachao', '2 coxinhas + 1 empada + suco de laranja. O classico da casa.', 32.00, '', 4, '["Coxinha", "Empada", "Suco de laranja"]', true, null, 4.8, 25, 189, '[]')
 ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- TABELAS DE PEDIDO DELIVERY
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS delivery_pedido (
+    id BIGSERIAL PRIMARY KEY,
+    empresa_id SMALLINT NOT NULL,
+    numero BIGINT,
+    pessoa_id BIGINT,
+    cliente_nome VARCHAR(200),
+    cliente_telefone VARCHAR(40),
+    tipo_atendimento VARCHAR(10),
+    status VARCHAR(30),
+    geo_endereco_id BIGINT,
+    endereco_logradouro VARCHAR(200),
+    endereco_numero VARCHAR(30),
+    endereco_complemento VARCHAR(120),
+    endereco_bairro VARCHAR(120),
+    endereco_cidade VARCHAR(120),
+    endereco_uf VARCHAR(2),
+    endereco_cep VARCHAR(12),
+    endereco_referencia TEXT,
+    destino_place_id TEXT,
+    distancia_metros INTEGER,
+    duracao_segundos INTEGER,
+    subtotal NUMERIC(12, 2),
+    taxa_entrega NUMERIC(10, 2),
+    valor_total NUMERIC(12, 2),
+    entregador_id BIGINT,
+    entregador_nome VARCHAR(200),
+    observacao TEXT,
+    usuario_id TEXT,
+    venda_id BIGINT,
+    reservado_por_usuario_id TEXT,
+    reserva_token VARCHAR(80),
+    reserva_expira_em TIMESTAMPTZ,
+    confirmado_em TIMESTAMPTZ,
+    em_transito_em TIMESTAMPTZ,
+    concluido_em TIMESTAMPTZ,
+    cancelado_em TIMESTAMPTZ,
+    versao INTEGER DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS delivery_pedido_item (
+    id BIGSERIAL PRIMARY KEY,
+    empresa_id SMALLINT NOT NULL,
+    delivery_pedido_id BIGINT NOT NULL REFERENCES delivery_pedido(id) ON DELETE CASCADE,
+    produto_id BIGINT NOT NULL,
+    produto_nome VARCHAR(200),
+    setor_id BIGINT,
+    setor_nome VARCHAR(120),
+    quantidade NUMERIC(10, 3),
+    valor_unitario NUMERIC(10, 2),
+    valor_adicional NUMERIC(10, 2),
+    desconto_item NUMERIC(10, 2),
+    valor_total_item NUMERIC(12, 2),
+    observacao TEXT,
+    status VARCHAR(15),
+    pedido_em TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS delivery_pedido_item_modificador (
+    id BIGSERIAL PRIMARY KEY,
+    delivery_pedido_item_id BIGINT NOT NULL REFERENCES delivery_pedido_item(id) ON DELETE CASCADE,
+    grupo_modificador_item_id BIGINT NOT NULL,
+    nome VARCHAR(200),
+    quantidade NUMERIC(10, 3),
+    valor_adicional NUMERIC(10, 2),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_delivery_pedido_empresa ON delivery_pedido(empresa_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_pedido_pessoa ON delivery_pedido(pessoa_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_pedido_status ON delivery_pedido(status);
+CREATE INDEX IF NOT EXISTS idx_delivery_pedido_item_pedido ON delivery_pedido_item(delivery_pedido_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_pedido_item_modificador_item ON delivery_pedido_item_modificador(delivery_pedido_item_id);
