@@ -37,11 +37,9 @@ class _ScreensaverCarouselState extends State<ScreensaverCarousel> {
       }
     }
 
-    return [
-      'assets/images/carousel_combo.png',
-      'assets/images/carousel_cafe.png',
-      'assets/images/carousel_doces.png',
-    ];
+    // Quando não há produtos com foto, não exibe imagens locais.
+    // As imagens são gerenciadas pelo app vinculado ao cardápio.
+    return [];
   }
 
   @override

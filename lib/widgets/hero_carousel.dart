@@ -39,23 +39,9 @@ class _HeroCarouselState extends State<HeroCarousel> {
       }
     }
 
-    return [
-      {
-        'title': 'Combo do Dia',
-        'subtitle': '2 Coxinhas + Refrigerante por apenas R\$ 18,90',
-        'image': 'assets/images/carousel_combo.png',
-      },
-      {
-        'title': 'Café Especial',
-        'subtitle': 'Nova safra de grãos 100% arábica',
-        'image': 'assets/images/carousel_cafe.png',
-      },
-      {
-        'title': 'Doces Artesanais',
-        'subtitle': 'Receitas da vó com goiabada cascão',
-        'image': 'assets/images/carousel_doces.png',
-      },
-    ];
+    // Quando não há produtos com foto, não exibe banners locais.
+    // As imagens são gerenciadas pelo app vinculado ao cardápio.
+    return [];
   }
 
   @override
@@ -124,6 +110,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    if (_banners.isEmpty) return const SizedBox.shrink();
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
