@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 import '../data/api_config.dart';
 import '../models/cart_item.dart';
@@ -24,12 +25,16 @@ class DeliveryPedidoService {
     OrderCheckoutData checkoutData, {
     double taxaEntrega = 0.0,
   }) async {
+    final subtotal = itens.fold<double>(0, (sum, item) => sum + item.total);
+    final valorTotal = subtotal + taxaEntrega;
+
     final payload = <String, dynamic>{
       'empresa_id': ApiConfig.empresaId,
       'pessoa_id': checkoutData.customerId,
       'cliente_nome': checkoutData.nome,
       'cliente_telefone': '',
       'tipo_atendimento': checkoutData.isEntrega ? 'ENTREGA' : 'RETIRADA',
+      'status': 'AGUARDANDO_CONFIRMACAO',
       'geo_endereco_id': checkoutData.addressId,
       'cotacao_token': '',
       'endereco_logradouro': checkoutData.rua,
@@ -42,11 +47,19 @@ class DeliveryPedidoService {
       'endereco_referencia': '',
       'observacao': '',
       'usuario_id': '',
+      'subtotal': subtotal,
+      'taxa_entrega': taxaEntrega,
+      'valor_total': valorTotal,
       'items': itens.map(_construirItem).toList(),
     };
 
+    debugPrint('[DeliveryPedidoService] payload: ${jsonEncode(payload)}');
+
     final uri = _api.buildUri('/api/v1/delivery/orders');
     final response = await _api.post(uri, body: payload);
+
+    debugPrint('[DeliveryPedidoService] status: ${response.statusCode}');
+    debugPrint('[DeliveryPedidoService] body: ${response.body}');
 
     final body = jsonDecode(response.body);
     if (body is Map<String, dynamic>) {
@@ -60,8 +73,12 @@ class DeliveryPedidoService {
   Map<String, dynamic> _construirItem(CartItem item) {
     return {
       'produto_id': int.tryParse(item.productId) ?? 0,
+      'produto_nome': item.name,
       'quantidade': item.quantity,
+      'valor_unitario': item.unitPrice,
+      'valor_total_item': item.total,
       'observacao': item.observation ?? '',
+      'status': 'ATIVO',
       'modifiers': _construirModificadores(item),
     };
   }
@@ -75,7 +92,11 @@ class DeliveryPedidoService {
         if (id == null) continue;
         modificadores.add({
           'grupo_modificador_item_id': id,
+          'nome': item.selectedOptionsDisplay.isNotEmpty
+              ? item.selectedOptionsDisplay
+              : '',
           'quantidade': item.selectedOptionQuantities[optionId] ?? 1,
+          'valor_adicional': item.selectedOptionPrices[optionId] ?? 0.0,
         });
       }
     }

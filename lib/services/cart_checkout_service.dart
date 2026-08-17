@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import '../services/comanda_service.dart';
 import '../services/delivery_pedido_service.dart';
 import '../services/print_queue_service.dart';
 import '../theme/app_theme.dart';
+import '../providers/delivery_provider.dart';
 import '../widgets/barcode_scanner_screen.dart';
 import '../widgets/comanda_order_sheet.dart';
 
@@ -219,9 +221,12 @@ class CartCheckoutService {
     // itens com modificador também preenchem delivery_pedido_item_modificador.
     if (checkoutData != null) {
       try {
+        final deliveryFee = context.read<DeliveryProvider>().deliveryFee ?? 0.0;
+        debugPrint('[CartCheckoutService] deliveryFee: $deliveryFee');
         await DeliveryPedidoService().salvarPedido(
           cart.items,
           checkoutData,
+          taxaEntrega: deliveryFee,
         );
       } catch (e) {
         if (!context.mounted) return;
