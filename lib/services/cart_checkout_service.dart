@@ -39,6 +39,7 @@ class CartCheckoutService {
     OrderCheckoutData? checkoutData,
   }) async {
     final authProvider = context.read<AuthProvider>();
+    debugPrint('[CartCheckoutService] sendOrder - useTotenMode=${authProvider.useTotenMode}, useComandaFeature=${authProvider.useComandaFeature}');
 
     if (checkoutData == null) {
       if (!context.mounted) return;
@@ -219,6 +220,7 @@ class CartCheckoutService {
     // Persiste o pedido nas tabelas delivery antes de enviar por WhatsApp.
     // Itens sem modificador ficam apenas em delivery_pedido + delivery_pedido_item;
     // itens com modificador também preenchem delivery_pedido_item_modificador.
+    debugPrint('[CartCheckoutService] sendOrderViaWhatsApp iniciado');
     if (checkoutData != null) {
       try {
         final deliveryFee = context.read<DeliveryProvider>().deliveryFee ?? 0.0;
