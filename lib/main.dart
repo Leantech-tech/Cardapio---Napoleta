@@ -25,11 +25,15 @@ void main() async {
   }
 
   final authProvider = AuthProvider();
-  await authProvider.loadSettings();
+
+  // Valida (e descarta, se necessário) qualquer token persistido antes de
+  // confiar na sessão. Isso evita que um token expirado do navegador normal
+  // seja reutilizado enquanto no modo anônimo um login fresco é feito.
+  await authProvider.checkSession();
 
   // Login silencioso automático — o cliente nunca vê uma tela de login.
   // Usa credenciais fixas de "cardápio" (totem) para autenticar a sessão.
-  if (!ApiClient().isAuthenticated) {
+  if (!authProvider.isLoggedIn) {
     try {
       await authProvider.login(
         'cardapio@napoleta.com.br',

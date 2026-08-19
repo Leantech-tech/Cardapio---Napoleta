@@ -35,9 +35,7 @@ class AuthProvider extends ChangeNotifier {
   bool get useComandaFeature => _useComandaFeature;
   bool get useTotenMode => _useTotenMode;
 
-  AuthProvider() {
-    checkSession();
-  }
+  AuthProvider();
 
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -119,6 +117,11 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
+
+    // Descarta qualquer token antigo antes de fazer login. Um token persistido
+    // pode estar expirado ou pertencer a outra sessão; enviá-lo no cabeçalho
+    // da requisição de login pode fazer o backend recusar a autenticação.
+    await ApiClient().clearToken();
 
     try {
       final uri = ApiClient().buildUri('/api/v1/auth/login');
