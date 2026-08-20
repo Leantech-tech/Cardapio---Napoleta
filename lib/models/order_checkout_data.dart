@@ -7,6 +7,7 @@ class OrderCheckoutData {
   final String nome;
   final String cpf;
   final String rua;
+  final String numero;
   final String bairro;
   final String cidade;
   final String estado;
@@ -20,6 +21,7 @@ class OrderCheckoutData {
     required this.nome,
     required this.cpf,
     this.rua = '',
+    this.numero = '',
     this.bairro = '',
     this.cidade = '',
     this.estado = '',
@@ -39,7 +41,7 @@ class OrderCheckoutData {
   /// Endereco completo formatado a partir dos campos separados.
   String get endereco {
     final partes = <String>[
-      rua.trim(),
+      '${rua.trim()}${numero.trim().isNotEmpty ? ', ${numero.trim()}' : ''}',
       bairro.trim(),
       if (cidade.trim().isNotEmpty && estado.trim().isNotEmpty)
         '${cidade.trim()} - ${estado.trim().toUpperCase()}'

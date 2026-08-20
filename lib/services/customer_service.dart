@@ -77,6 +77,7 @@ class CustomerService {
         'empresa_id': ApiConfig.empresaId,
         'tipo': tipoEndereco,
         'rua': address.rua.trim(),
+        'numero': address.numero.trim(),
         'bairro': address.bairro.trim(),
         'cidade': address.cidade.trim(),
         'estado': address.estado.trim().toUpperCase(),

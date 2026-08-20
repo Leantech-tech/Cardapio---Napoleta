@@ -38,6 +38,7 @@ class AddressManagerDialog extends StatefulWidget {
 class _AddressManagerDialogState extends State<AddressManagerDialog> {
   final _cepController = TextEditingController();
   final _ruaController = TextEditingController();
+  final _numeroController = TextEditingController();
   final _bairroController = TextEditingController();
   final _cidadeController = TextEditingController();
   final _estadoController = TextEditingController();
@@ -63,6 +64,7 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
     _cepFocusNode.dispose();
     _cepController.dispose();
     _ruaController.dispose();
+    _numeroController.dispose();
     _bairroController.dispose();
     _cidadeController.dispose();
     _estadoController.dispose();
@@ -131,6 +133,7 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
 
     final address = CustomerAddress(
       rua: _ruaController.text,
+      numero: _numeroController.text,
       bairro: _bairroController.text,
       cidade: _cidadeController.text,
       estado: _estadoController.text,
@@ -142,6 +145,7 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
       _pendingAddresses.add(address);
       _cepController.clear();
       _ruaController.clear();
+      _numeroController.clear();
       _bairroController.clear();
       _cidadeController.clear();
       _estadoController.clear();
@@ -390,11 +394,29 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
                         textCapitalization: TextCapitalization.sentences,
                       ),
                       const SizedBox(height: 12),
-                      _buildTextField(
-                        controller: _ruaController,
-                        label: 'Rua',
-                        icon: Icons.location_on_outlined,
-                        textCapitalization: TextCapitalization.sentences,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: _buildTextField(
+                              controller: _ruaController,
+                              label: 'Rua',
+                              icon: Icons.location_on_outlined,
+                              textCapitalization: TextCapitalization.sentences,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 1,
+                            child: _buildTextField(
+                              controller: _numeroController,
+                              label: 'N°',
+                              icon: Icons.pin_outlined,
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       SizedBox(

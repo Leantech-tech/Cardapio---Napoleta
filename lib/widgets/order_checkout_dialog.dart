@@ -356,6 +356,7 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         nome: cadastrado.nome,
         cpf: cadastrado.cpfFormatado,
         rua: enderecoUsado?.rua ?? '',
+        numero: enderecoUsado?.numero ?? '',
         bairro: enderecoUsado?.bairro ?? '',
         cidade: enderecoUsado?.cidade ?? '',
         estado: enderecoUsado?.estado ?? '',

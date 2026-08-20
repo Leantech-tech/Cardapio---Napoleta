@@ -38,7 +38,7 @@ class DeliveryPedidoService {
       'geo_endereco_id': checkoutData.addressId,
       'cotacao_token': '',
       'endereco_logradouro': checkoutData.rua,
-      'endereco_numero': '',
+      'endereco_numero': checkoutData.numero,
       'endereco_complemento': '',
       'endereco_bairro': checkoutData.bairro,
       'endereco_cidade': checkoutData.cidade,

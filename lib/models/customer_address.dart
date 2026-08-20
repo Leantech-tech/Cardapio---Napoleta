@@ -3,6 +3,7 @@ class CustomerAddress {
   final int? pessoaId;
   final String tipo;
   final String rua;
+  final String numero;
   final String bairro;
   final String cidade;
   final String estado;
@@ -15,6 +16,7 @@ class CustomerAddress {
     this.pessoaId,
     this.tipo = 'entrega',
     this.rua = '',
+    this.numero = '',
     this.bairro = '',
     this.cidade = '',
     this.estado = '',
@@ -29,6 +31,7 @@ class CustomerAddress {
       pessoaId: map['pessoa_id'] as int?,
       tipo: (map['tipo'] ?? 'entrega').toString(),
       rua: (map['rua'] ?? '').toString(),
+      numero: (map['numero'] ?? '').toString(),
       bairro: (map['bairro'] ?? '').toString(),
       cidade: (map['cidade'] ?? '').toString(),
       estado: (map['estado'] ?? '').toString(),
@@ -47,6 +50,7 @@ class CustomerAddress {
         'pessoa_id': pessoaId ?? pessoaIdOverride,
       'tipo': tipo,
       'rua': rua.trim(),
+      'numero': numero.trim(),
       'bairro': bairro.trim(),
       'cidade': cidade.trim(),
       'estado': estado.trim().toUpperCase(),
@@ -58,7 +62,7 @@ class CustomerAddress {
 
   String get endereco {
     final partes = <String>[
-      rua.trim(),
+      '${rua.trim()}${numero.trim().isNotEmpty ? ', ${numero.trim()}' : ''}',
       bairro.trim(),
       if (cidade.trim().isNotEmpty && estado.trim().isNotEmpty)
         '${cidade.trim()} - ${estado.trim().toUpperCase()}'
@@ -77,6 +81,7 @@ class CustomerAddress {
     int? pessoaId,
     String? tipo,
     String? rua,
+    String? numero,
     String? bairro,
     String? cidade,
     String? estado,
@@ -89,6 +94,7 @@ class CustomerAddress {
       pessoaId: pessoaId ?? this.pessoaId,
       tipo: tipo ?? this.tipo,
       rua: rua ?? this.rua,
+      numero: numero ?? this.numero,
       bairro: bairro ?? this.bairro,
       cidade: cidade ?? this.cidade,
       estado: estado ?? this.estado,
@@ -100,6 +106,7 @@ class CustomerAddress {
 
   bool isSameAddress(CustomerAddress other) {
     return _normalize(rua) == _normalize(other.rua) &&
+        _normalize(numero) == _normalize(other.numero) &&
         _normalize(bairro) == _normalize(other.bairro) &&
         _normalize(cidade) == _normalize(other.cidade) &&
         _normalize(estado) == _normalize(other.estado) &&

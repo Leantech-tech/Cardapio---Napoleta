@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS pessoa_endereco (
   empresa_id INTEGER NOT NULL,
   tipo VARCHAR(20) NOT NULL DEFAULT 'entrega',
   rua TEXT,
+  numero VARCHAR(20),
   bairro TEXT,
   cidade TEXT,
   estado VARCHAR(2),
@@ -134,8 +135,16 @@ CREATE TABLE IF NOT EXISTS pessoa_endereco (
 CREATE INDEX IF NOT EXISTS idx_pessoa_endereco_pessoa ON pessoa_endereco(pessoa_id);
 CREATE INDEX IF NOT EXISTS idx_pessoa_endereco_empresa ON pessoa_endereco(empresa_id);
 
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'pessoa_endereco' AND column_name = 'numero') THEN
+    ALTER TABLE pessoa_endereco ADD COLUMN numero VARCHAR(20);
+  END IF;
+END $$;
+
 COMMENT ON TABLE pessoa_endereco IS 'Enderecos vinculados as pessoas/clientes';
-COMMENT ON COLUMN pessoa_endereco.rua IS 'Logradouro e numero do endereco';
+COMMENT ON COLUMN pessoa_endereco.rua IS 'Logradouro do endereco';
+COMMENT ON COLUMN pessoa_endereco.numero IS 'Numero do endereco';
 COMMENT ON COLUMN pessoa_endereco.bairro IS 'Bairro do endereco';
 COMMENT ON COLUMN pessoa_endereco.cidade IS 'Cidade do endereco';
 COMMENT ON COLUMN pessoa_endereco.estado IS 'UF do endereco (2 caracteres)';
