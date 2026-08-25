@@ -1,6 +1,6 @@
-enum TipoEntrega { retirada, entrega }
+import 'payment_method.dart';
 
-enum FormaPagamento { dinheiro, pix, credito, debito }
+enum TipoEntrega { retirada, entrega }
 
 class OrderCheckoutData {
   final TipoEntrega tipoEntrega;
@@ -12,7 +12,7 @@ class OrderCheckoutData {
   final String cidade;
   final String estado;
   final String cep;
-  final FormaPagamento formaPagamento;
+  final PaymentMethod paymentMethod;
   final int? customerId;
   final int? addressId;
 
@@ -26,7 +26,7 @@ class OrderCheckoutData {
     this.cidade = '',
     this.estado = '',
     this.cep = '',
-    required this.formaPagamento,
+    required this.paymentMethod,
     this.customerId,
     this.addressId,
   });
@@ -36,7 +36,7 @@ class OrderCheckoutData {
 
   String get tipoEntregaLabel => isEntrega ? 'Entrega' : 'Retirar na loja';
 
-  String get formaPagamentoLabel => labelForFormaPagamento(formaPagamento);
+  String get formaPagamentoLabel => paymentMethod.descricao;
 
   /// Endereco completo formatado a partir dos campos separados.
   String get endereco {
@@ -53,18 +53,5 @@ class OrderCheckoutData {
     ].where((p) => p.isNotEmpty);
 
     return partes.join(', ');
-  }
-
-  static String labelForFormaPagamento(FormaPagamento forma) {
-    switch (forma) {
-      case FormaPagamento.dinheiro:
-        return 'Dinheiro';
-      case FormaPagamento.pix:
-        return 'Pix';
-      case FormaPagamento.credito:
-        return 'Crédito';
-      case FormaPagamento.debito:
-        return 'Débito';
-    }
   }
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +13,7 @@ import '../theme/app_theme.dart';
 import '../providers/delivery_provider.dart';
 import '../widgets/barcode_scanner_screen.dart';
 import '../widgets/comanda_order_sheet.dart';
+import '../widgets/order_tracking_dialog.dart';
 
 class CartCheckoutService {
   const CartCheckoutService();
@@ -221,11 +221,12 @@ class CartCheckoutService {
     // Itens sem modificador ficam apenas em delivery_pedido + delivery_pedido_item;
     // itens com modificador também preenchem delivery_pedido_item_modificador.
     debugPrint('[CartCheckoutService] sendOrderViaWhatsApp iniciado');
+    Map<String, dynamic>? savedOrder;
     if (checkoutData != null) {
       try {
         final deliveryFee = context.read<DeliveryProvider>().deliveryFee ?? 0.0;
         debugPrint('[CartCheckoutService] deliveryFee: $deliveryFee');
-        await DeliveryPedidoService().salvarPedido(
+        savedOrder = await DeliveryPedidoService().salvarPedido(
           cart.items,
           checkoutData,
           taxaEntrega: deliveryFee,
@@ -238,6 +239,17 @@ class CartCheckoutService {
           Colors.red[600],
         );
         return;
+      }
+    }
+
+    // No modo Link, exibe popup de acompanhamento quando houver um
+    // delivery_pedido criado. O fluxo de WhatsApp continua normalmente.
+    if (savedOrder != null && context.mounted) {
+      final orderId = savedOrder['id'];
+      if (orderId is int && orderId > 0) {
+        // Não aguarda o fechamento do popup para não travar o envio pelo
+        // WhatsApp; o usuário pode acompanhar o status enquanto isso.
+        OrderTrackingDialog.show(context, orderId: orderId);
       }
     }
 

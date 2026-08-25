@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../models/customer.dart';
 import '../models/customer_address.dart';
 import '../models/order_checkout_data.dart';
+import '../models/payment_method.dart';
+import '../providers/payment_method_provider.dart';
 import '../services/customer_service.dart';
 import '../theme/app_theme.dart';
 import 'address_manager_dialog.dart';
@@ -59,13 +62,32 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
   final _nomeController = TextEditingController();
   final _cpfController = TextEditingController();
 
-  FormaPagamento _formaPagamento = FormaPagamento.dinheiro;
+  PaymentMethod? _selectedPaymentMethod;
+  bool _isLoadingPaymentMethods = false;
 
   @override
   void initState() {
     super.initState();
     _step = widget.initialStep;
     _tipoEntrega = widget.tipoEntregaInicial;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPaymentMethods());
+  }
+
+  Future<void> _loadPaymentMethods() async {
+    final provider = context.read<PaymentMethodProvider>();
+    setState(() => _isLoadingPaymentMethods = true);
+    try {
+      await provider.loadPaymentMethods();
+      if (!mounted) return;
+      final methods = provider.methods;
+      setState(() {
+        _selectedPaymentMethod = methods.isNotEmpty ? methods.first : null;
+        _isLoadingPaymentMethods = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoadingPaymentMethods = false);
+    }
   }
 
   @override
@@ -316,6 +338,11 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
       return;
     }
 
+    if (_selectedPaymentMethod == null) {
+      setState(() => _error = 'Selecione uma forma de pagamento.');
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -361,7 +388,7 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         cidade: enderecoUsado?.cidade ?? '',
         estado: enderecoUsado?.estado ?? '',
         cep: enderecoUsado?.cep ?? '',
-        formaPagamento: _formaPagamento,
+        paymentMethod: _selectedPaymentMethod!,
         customerId: cadastrado.id,
         addressId: enderecoUsado?.id,
       );
@@ -746,6 +773,55 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
   }
 
   Widget _buildPaymentDropdown() {
+    if (_isLoadingPaymentMethods) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        decoration: BoxDecoration(
+          color: AppTheme.inputBg(context),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppTheme.textSecondary(context),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Carregando formas de pagamento...',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppTheme.textSecondary(context),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final methods = context.watch<PaymentMethodProvider>().methods;
+
+    if (methods.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppTheme.inputBg(context),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          'Nenhuma forma de pagamento disponível',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppTheme.textSecondary(context),
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -753,8 +829,8 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<FormaPagamento>(
-          value: _formaPagamento,
+        child: DropdownButton<PaymentMethod>(
+          value: _selectedPaymentMethod ?? methods.first,
           isExpanded: true,
           icon: Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondary(context)),
           dropdownColor: AppTheme.surface(context),
@@ -762,18 +838,18 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
             fontSize: 14,
             color: AppTheme.textPrimary(context),
           ),
-          items: FormaPagamento.values.map((forma) {
-            return DropdownMenuItem<FormaPagamento>(
-              value: forma,
+          items: methods.map((method) {
+            return DropdownMenuItem<PaymentMethod>(
+              value: method,
               child: Text(
-                OrderCheckoutData.labelForFormaPagamento(forma),
+                method.descricao,
                 style: GoogleFonts.inter(fontSize: 14),
               ),
             );
           }).toList(),
           onChanged: (value) {
             if (value != null) {
-              setState(() => _formaPagamento = value);
+              setState(() => _selectedPaymentMethod = value);
             }
           },
         ),

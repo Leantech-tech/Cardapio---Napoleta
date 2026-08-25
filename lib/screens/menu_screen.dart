@@ -604,15 +604,16 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                onPressed: () => _showLogoutMenu(context, authProvider),
-                icon: Icon(
-                  Icons.settings_outlined,
-                  color: AppTheme.textSecondary(context),
+              if (!kIsWeb)
+                IconButton(
+                  onPressed: () => _showLogoutMenu(context, authProvider),
+                  icon: Icon(
+                    Icons.settings_outlined,
+                    color: AppTheme.textSecondary(context),
+                  ),
+                  tooltip: 'Configurações',
+                  visualDensity: isMobile ? VisualDensity.compact : VisualDensity.standard,
                 ),
-                tooltip: 'Configurações',
-                visualDensity: isMobile ? VisualDensity.compact : VisualDensity.standard,
-              ),
               if (authProvider.useComandaFeature)
                 IconButton(
                   onPressed: _consultarComanda,
