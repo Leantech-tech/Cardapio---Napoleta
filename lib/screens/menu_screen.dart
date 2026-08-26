@@ -27,6 +27,7 @@ import '../widgets/comanda_viewer_sheet.dart';
 import '../widgets/cart_panel.dart';
 import '../widgets/mini_cart_preview.dart';
 import '../widgets/order_checkout_dialog.dart';
+import '../widgets/order_tracking_cpf_dialog.dart';
 import '../widgets/totem_mode_selector.dart';
 import '../services/cart_checkout_service.dart';
 import '../services/barcode_scanner_service.dart';
@@ -279,6 +280,10 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
 
   void _goToCart() {
     setState(() => _isCartOpen = true);
+  }
+
+  void _acompanharPedido() {
+    OrderTrackingCpfDialog.show(context);
   }
 
   String _extrairNumeroComanda(String barcode) {
@@ -612,6 +617,16 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     color: AppTheme.textSecondary(context),
                   ),
                   tooltip: 'Configurações',
+                  visualDensity: isMobile ? VisualDensity.compact : VisualDensity.standard,
+                ),
+              if (!authProvider.useTotenMode && !authProvider.useComandaFeature)
+                IconButton(
+                  onPressed: _acompanharPedido,
+                  icon: Icon(
+                    Icons.delivery_dining_outlined,
+                    color: AppTheme.textSecondary(context),
+                  ),
+                  tooltip: 'Acompanhe seu pedido',
                   visualDensity: isMobile ? VisualDensity.compact : VisualDensity.standard,
                 ),
               if (authProvider.useComandaFeature)

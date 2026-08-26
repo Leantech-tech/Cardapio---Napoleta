@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tachao_menu/models/order_tracking_status.dart';
 import 'package:tachao_menu/services/order_tracking_service.dart';
 
@@ -122,6 +123,34 @@ void main() {
     test('retorna null quando não há timestamps', () {
       expect(service.extractUpdatedAt({}), isNull);
       expect(service.extractUpdatedAt(null), isNull);
+    });
+  });
+
+  group('OrderTrackingService cache local', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('salva e recupera pedido por CPF', () async {
+      await OrderTrackingService.saveLastOrderByCpf('123.456.789-00', 42);
+
+      final service = OrderTrackingService();
+      expect(await service.findLatestOpenOrderByCpf('12345678900'), 42);
+    });
+
+    test('ignora CPF inválido ao salvar', () async {
+      await OrderTrackingService.saveLastOrderByCpf('123', 42);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('last_order_by_cpf'), isNull);
+    });
+
+    test('limpa vínculo ao chamar clearLastOrderByCpf', () async {
+      await OrderTrackingService.saveLastOrderByCpf('123.456.789-00', 42);
+      await OrderTrackingService.clearLastOrderByCpf('12345678900');
+
+      final service = OrderTrackingService();
+      expect(await service.findLatestOpenOrderByCpf('12345678900'), isNull);
     });
   });
 }

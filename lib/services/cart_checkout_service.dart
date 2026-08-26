@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../services/comanda_service.dart';
 import '../services/delivery_pedido_service.dart';
+import '../services/order_tracking_service.dart';
 import '../services/print_queue_service.dart';
 import '../theme/app_theme.dart';
 import '../providers/delivery_provider.dart';
@@ -51,27 +52,25 @@ class CartCheckoutService {
       return;
     }
 
-    try {
-      // Todo pedido (link ou totem) é salvo na fila de impressão.
-      // O setor é definido pela origem: Delivery para link, Balcao para totem.
-      await PrintQueueService().adicionarPedido(
-        itens: cart.items,
-        checkoutData: checkoutData,
-        isTotem: authProvider.useTotenMode,
-        storeAddress: authProvider.storeAddress,
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      _showSnackBar(
-        context,
-        'Erro ao enfileirar pedido para impressão: $e',
-        Colors.red[600],
-      );
-      return;
-    }
-
     // No modo totem o pedido termina aqui: não sai por WhatsApp nem comanda.
     if (authProvider.useTotenMode) {
+      try {
+        await PrintQueueService().adicionarPedido(
+          itens: cart.items,
+          checkoutData: checkoutData,
+          isTotem: true,
+          storeAddress: authProvider.storeAddress,
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        _showSnackBar(
+          context,
+          'Erro ao enfileirar pedido para impressão: $e',
+          Colors.red[600],
+        );
+        return;
+      }
+
       if (!context.mounted) return;
       _showSnackBar(
         context,
@@ -247,6 +246,15 @@ class CartCheckoutService {
     if (savedOrder != null && context.mounted) {
       final orderId = savedOrder['id'];
       if (orderId is int && orderId > 0) {
+        // Guarda localmente o vínculo CPF → pedido para reabrir o
+        // acompanhamento depois que o popup for fechado.
+        if (checkoutData != null) {
+          await OrderTrackingService.saveLastOrderByCpf(
+            checkoutData.cpf,
+            orderId,
+          );
+        }
+        if (!context.mounted) return;
         // Não aguarda o fechamento do popup para não travar o envio pelo
         // WhatsApp; o usuário pode acompanhar o status enquanto isso.
         OrderTrackingDialog.show(context, orderId: orderId);
@@ -255,6 +263,29 @@ class CartCheckoutService {
 
     if (!context.mounted) return;
     final authProvider = context.read<AuthProvider>();
+
+    if (checkoutData != null) {
+      try {
+        final deliveryPedidoId = savedOrder != null ? savedOrder['id'] as int? : null;
+        await PrintQueueService().adicionarPedido(
+          itens: cart.items,
+          checkoutData: checkoutData,
+          isTotem: false,
+          storeAddress: authProvider.storeAddress,
+          deliveryPedidoId: deliveryPedidoId,
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        _showSnackBar(
+          context,
+          'Erro ao enfileirar pedido para impressão: $e',
+          Colors.red[600],
+        );
+        return;
+      }
+    }
+
+    if (!context.mounted) return;
 
     // Sempre busca o número mais atual da tabela empresa antes de enviar.
     if (authProvider.whatsappNumber.isEmpty) {
