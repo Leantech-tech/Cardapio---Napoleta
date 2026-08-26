@@ -2,7 +2,6 @@
 enum OrderStatus {
   aguardandoConfirmacao,
   confirmado,
-  emPreparo,
   emTransito,
   entregue,
   cancelado,
@@ -34,12 +33,7 @@ class OrderTrackingConfig {
     OrderTrackingStep(
       status: OrderStatus.confirmado,
       label: 'Confirmado',
-      description: 'O pedido foi confirmado e em breve entra em preparo.',
-    ),
-    OrderTrackingStep(
-      status: OrderStatus.emPreparo,
-      label: 'Em preparo',
-      description: 'Estamos preparando seu pedido com carinho.',
+      description: 'O pedido foi confirmado e em breve sai para entrega.',
     ),
     OrderTrackingStep(
       status: OrderStatus.emTransito,
@@ -79,7 +73,7 @@ class OrderTrackingConfig {
       case 'EM_PREPARO':
       case 'PREPARO':
       case 'PREPARANDO':
-        return OrderStatus.emPreparo;
+        return OrderStatus.confirmado;
       case 'EM_TRANSITO':
       case 'EM_TRÂNSITO':
       case 'SAIU_PARA_ENTREGA':

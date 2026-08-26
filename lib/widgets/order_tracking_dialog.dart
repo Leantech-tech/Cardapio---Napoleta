@@ -287,8 +287,6 @@ class _OrderTrackingDialogState extends State<OrderTrackingDialog> {
         return const Color(0xFFF59E0B); // amber
       case OrderStatus.confirmado:
         return const Color(0xFF3B82F6); // blue
-      case OrderStatus.emPreparo:
-        return const Color(0xFF8B5CF6); // violet
       case OrderStatus.emTransito:
         return const Color(0xFF00A650); // green
       case OrderStatus.entregue:
@@ -304,8 +302,6 @@ class _OrderTrackingDialogState extends State<OrderTrackingDialog> {
         return Icons.hourglass_top_outlined;
       case OrderStatus.confirmado:
         return Icons.check_circle_outline;
-      case OrderStatus.emPreparo:
-        return Icons.soup_kitchen_outlined;
       case OrderStatus.emTransito:
         return Icons.moped_outlined;
       case OrderStatus.entregue:
@@ -321,8 +317,6 @@ class _OrderTrackingDialogState extends State<OrderTrackingDialog> {
         return 'Aguardando confirmação';
       case OrderStatus.confirmado:
         return 'Confirmado';
-      case OrderStatus.emPreparo:
-        return 'Em preparo';
       case OrderStatus.emTransito:
         return 'Em rota de entrega';
       case OrderStatus.entregue:

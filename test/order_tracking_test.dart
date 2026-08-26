@@ -16,7 +16,7 @@ void main() {
       );
       expect(
         OrderTrackingConfig.fromString('EM_PREPARO'),
-        OrderStatus.emPreparo,
+        OrderStatus.confirmado,
       );
       expect(
         OrderTrackingConfig.fromString('EM_TRANSITO'),
@@ -46,7 +46,7 @@ void main() {
     test('aceita variações com hífen e underscore', () {
       expect(
         OrderTrackingConfig.fromString('em-preparo'),
-        OrderStatus.emPreparo,
+        OrderStatus.confirmado,
       );
       expect(
         OrderTrackingConfig.fromString('saiu_para_entrega'),
@@ -84,7 +84,7 @@ void main() {
     test('extrai status do mapa', () {
       expect(
         service.extractStatus({'status': 'EM_PREPARO'}),
-        OrderStatus.emPreparo,
+        OrderStatus.confirmado,
       );
     });
 
