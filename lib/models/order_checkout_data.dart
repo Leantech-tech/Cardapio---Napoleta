@@ -15,6 +15,8 @@ class OrderCheckoutData {
   final PaymentMethod paymentMethod;
   final int? customerId;
   final int? addressId;
+  final bool precisaTroco;
+  final double valorTroco;
 
   const OrderCheckoutData({
     required this.tipoEntrega,
@@ -29,6 +31,8 @@ class OrderCheckoutData {
     required this.paymentMethod,
     this.customerId,
     this.addressId,
+    this.precisaTroco = false,
+    this.valorTroco = 0.0,
   });
 
   bool get isEntrega => tipoEntrega == TipoEntrega.entrega;
@@ -36,7 +40,15 @@ class OrderCheckoutData {
 
   String get tipoEntregaLabel => isEntrega ? 'Entrega' : 'Retirar na loja';
 
-  String get formaPagamentoLabel => paymentMethod.descricao;
+  String get formaPagamentoLabel {
+    final buffer = StringBuffer(paymentMethod.descricao);
+    if (precisaTroco && valorTroco > 0) {
+      buffer.write(
+        ' (troco para R\$ ${valorTroco.toStringAsFixed(2).replaceAll('.', ',')})',
+      );
+    }
+    return buffer.toString();
+  }
 
   /// Endereco completo formatado a partir dos campos separados.
   String get endereco {

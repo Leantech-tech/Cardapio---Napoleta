@@ -257,7 +257,11 @@ class CartCheckoutService {
         if (!context.mounted) return;
         // Não aguarda o fechamento do popup para não travar o envio pelo
         // WhatsApp; o usuário pode acompanhar o status enquanto isso.
-        OrderTrackingDialog.show(context, orderId: orderId);
+        OrderTrackingDialog.show(
+          context,
+          orderId: orderId,
+          isRetirada: checkoutData?.isRetirada,
+        );
       }
     }
 

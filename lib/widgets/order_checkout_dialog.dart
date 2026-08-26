@@ -61,9 +61,11 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
 
   final _nomeController = TextEditingController();
   final _cpfController = TextEditingController();
+  final _trocoController = TextEditingController();
 
   PaymentMethod? _selectedPaymentMethod;
   bool _isLoadingPaymentMethods = false;
+  bool? _precisaTroco;
 
   @override
   void initState() {
@@ -94,6 +96,7 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
   void dispose() {
     _nomeController.dispose();
     _cpfController.dispose();
+    _trocoController.dispose();
     super.dispose();
   }
 
@@ -101,6 +104,10 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
     setState(() {
       _tipoEntrega = tipo;
       _step = 2;
+      if (tipo == TipoEntrega.retirada) {
+        _precisaTroco = null;
+        _trocoController.clear();
+      }
     });
   }
 
@@ -115,6 +122,35 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
       buffer.write(numeros[i]);
     }
     return buffer.toString();
+  }
+
+  bool _isDinheiro(PaymentMethod? method) {
+    if (method == null) return false;
+    return method.descricao.toUpperCase().contains('DINHEIRO');
+  }
+
+  String _formatarValorMonetario(String texto) {
+    final numeros = texto.replaceAll(RegExp(r'[^0-9]'), '');
+    if (numeros.isEmpty) return 'R\$ 0,00';
+
+    // Evita overflow e mantém no máximo 2 decimais.
+    final value = int.tryParse(numeros) ?? 0;
+    final reais = (value / 100).floor();
+    final centavos = value % 100;
+
+    final reaisFormatados = reais.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (match) => '${match[1]}.',
+        );
+    final centavosFormatados = centavos.toString().padLeft(2, '0');
+    return 'R\$ $reaisFormatados,$centavosFormatados';
+  }
+
+  double _parseValorMonetario(String texto) {
+    final numeros = texto.replaceAll(RegExp(r'[^0-9]'), '');
+    if (numeros.isEmpty) return 0.0;
+    final value = int.tryParse(numeros) ?? 0;
+    return value / 100;
   }
 
   Future<void> _buscarClientePorCpf() async {
@@ -343,6 +379,20 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
       return;
     }
 
+    if (_tipoEntrega == TipoEntrega.entrega && _isDinheiro(_selectedPaymentMethod)) {
+      if (_precisaTroco == null) {
+        setState(() => _error = 'Informe se precisa de troco.');
+        return;
+      }
+      if (_precisaTroco == true) {
+        final valorTroco = _parseValorMonetario(_trocoController.text);
+        if (valorTroco <= 0) {
+          setState(() => _error = 'Informe o valor para o troco.');
+          return;
+        }
+      }
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -378,6 +428,12 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
 
       if (!mounted) return;
 
+      final valorTroco = _tipoEntrega == TipoEntrega.entrega &&
+              _isDinheiro(_selectedPaymentMethod) &&
+              _precisaTroco == true
+          ? _parseValorMonetario(_trocoController.text)
+          : 0.0;
+
       final data = OrderCheckoutData(
         tipoEntrega: _tipoEntrega!,
         nome: cadastrado.nome,
@@ -391,6 +447,8 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         paymentMethod: _selectedPaymentMethod!,
         customerId: cadastrado.id,
         addressId: enderecoUsado?.id,
+        precisaTroco: _precisaTroco ?? false,
+        valorTroco: valorTroco,
       );
 
       Navigator.of(context).pop(data);
@@ -648,6 +706,10 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         ),
         const SizedBox(height: 8),
         _buildPaymentDropdown(),
+        if (isEntrega && _isDinheiro(_selectedPaymentMethod)) ...[
+          const SizedBox(height: 16),
+          _buildTrocoSection(),
+        ],
         if (isEntrega) ...[
           const SizedBox(height: 12),
           Container(
@@ -716,6 +778,125 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTrocoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Troco?',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary(context),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTrocoOption(
+                label: 'Sim',
+                selected: _precisaTroco == true,
+                onTap: () => setState(() => _precisaTroco = true),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTrocoOption(
+                label: 'Não',
+                selected: _precisaTroco == false,
+                onTap: () => setState(() {
+                  _precisaTroco = false;
+                  _trocoController.clear();
+                }),
+              ),
+            ),
+          ],
+        ),
+        if (_precisaTroco == true) ...[
+          const SizedBox(height: 12),
+          TextField(
+            controller: _trocoController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              TextInputFormatter.withFunction((oldValue, newValue) {
+                final formatted = _formatarValorMonetario(newValue.text);
+                return TextEditingValue(
+                  text: formatted,
+                  selection: TextSelection.collapsed(offset: formatted.length),
+                );
+              }),
+            ],
+            decoration: InputDecoration(
+              labelText: 'Troco para quanto?',
+              hintText: 'R\$ 0,00',
+              labelStyle: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppTheme.textSecondary(context),
+              ),
+              filled: true,
+              fillColor: AppTheme.inputBg(context),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppTheme.textPrimary(context),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTrocoOption({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppTheme.brandPurple.withValues(alpha: 0.12)
+              : AppTheme.inputBg(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? AppTheme.brandPurple : AppTheme.border(context),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: selected ? AppTheme.brandPurple : AppTheme.textSecondary(context),
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: selected ? AppTheme.brandPurple : AppTheme.textPrimary(context),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

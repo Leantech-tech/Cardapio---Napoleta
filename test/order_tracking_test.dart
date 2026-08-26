@@ -97,6 +97,47 @@ void main() {
     });
   });
 
+  group('OrderTrackingService.extractIsRetirada', () {
+    final service = OrderTrackingService();
+
+    test('identifica retirada pelo tipo_atendimento', () {
+      expect(service.extractIsRetirada({'tipo_atendimento': 'RETIRADA'}), isTrue);
+      expect(service.extractIsRetirada({'tipo_atendimento': 'BALCAO'}), isTrue);
+      expect(service.extractIsRetirada({'tipo_atendimento': 'ENTREGA'}), isFalse);
+    });
+
+    test('identifica retirada pelo tipo_entrega', () {
+      expect(service.extractIsRetirada({'tipo_entrega': 'Retirar na loja'}), isTrue);
+      expect(service.extractIsRetirada({'tipo_entrega': 'Entrega'}), isFalse);
+    });
+
+    test('retorna false quando não há tipo', () {
+      expect(service.extractIsRetirada(null), isFalse);
+      expect(service.extractIsRetirada({}), isFalse);
+    });
+  });
+
+  group('OrderTrackingConfig.stepsFor', () {
+    test('entrega tem 4 passos incluindo emTransito', () {
+      final steps = OrderTrackingConfig.stepsFor(isRetirada: false);
+      expect(steps.map((s) => s.status), [
+        OrderStatus.aguardandoConfirmacao,
+        OrderStatus.confirmado,
+        OrderStatus.emTransito,
+        OrderStatus.entregue,
+      ]);
+    });
+
+    test('retirada tem 3 passos incluindo prontoParaRetirada', () {
+      final steps = OrderTrackingConfig.stepsFor(isRetirada: true);
+      expect(steps.map((s) => s.status), [
+        OrderStatus.aguardandoConfirmacao,
+        OrderStatus.confirmado,
+        OrderStatus.prontoParaRetirada,
+      ]);
+    });
+  });
+
   group('OrderTrackingService.extractUpdatedAt', () {
     final service = OrderTrackingService();
 
@@ -123,6 +164,15 @@ void main() {
     test('retorna null quando não há timestamps', () {
       expect(service.extractUpdatedAt({}), isNull);
       expect(service.extractUpdatedAt(null), isNull);
+    });
+
+    test('converte timestamp UTC para horário local', () {
+      final dateUtc = DateTime.utc(2026, 8, 26, 19, 5, 51);
+      final result = service.extractUpdatedAt({
+        'updated_at': dateUtc.toIso8601String(),
+      });
+      expect(result, isNotNull);
+      expect(result!.toLocal(), dateUtc.toLocal());
     });
   });
 

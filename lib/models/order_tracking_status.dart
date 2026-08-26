@@ -4,6 +4,7 @@ enum OrderStatus {
   confirmado,
   emTransito,
   entregue,
+  prontoParaRetirada,
   cancelado,
 }
 
@@ -24,7 +25,7 @@ class OrderTrackingStep {
 
 /// Configuração fixa dos passos exibidos no popup.
 class OrderTrackingConfig {
-  static const List<OrderTrackingStep> steps = [
+  static const List<OrderTrackingStep> stepsEntrega = [
     OrderTrackingStep(
       status: OrderStatus.aguardandoConfirmacao,
       label: 'Aguardando confirmação',
@@ -46,6 +47,28 @@ class OrderTrackingConfig {
       description: 'Pedido entregue. Bom apetite!',
     ),
   ];
+
+  static const List<OrderTrackingStep> stepsRetirada = [
+    OrderTrackingStep(
+      status: OrderStatus.aguardandoConfirmacao,
+      label: 'Aguardando confirmação',
+      description: 'Seu pedido foi recebido e aguarda aprovação da loja.',
+    ),
+    OrderTrackingStep(
+      status: OrderStatus.confirmado,
+      label: 'Confirmado',
+      description: 'O pedido foi confirmado e em breve fica pronto para retirada.',
+    ),
+    OrderTrackingStep(
+      status: OrderStatus.prontoParaRetirada,
+      label: 'Pronto para retirada',
+      description: 'Seu pedido está pronto. Pode retirar na loja.',
+    ),
+  ];
+
+  static List<OrderTrackingStep> stepsFor({required bool isRetirada}) {
+    return isRetirada ? stepsRetirada : stepsEntrega;
+  }
 
   /// Mapeia o valor textual vindo do backend para o enum interno.
   ///

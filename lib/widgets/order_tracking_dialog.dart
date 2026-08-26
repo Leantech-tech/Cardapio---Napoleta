@@ -11,17 +11,26 @@ import '../theme/app_theme.dart';
 /// para refletir mudanças feitas pelo app Minha Loja.
 class OrderTrackingDialog extends StatefulWidget {
   final int orderId;
+  final bool? initialIsRetirada;
 
   const OrderTrackingDialog({
     super.key,
     required this.orderId,
+    this.initialIsRetirada,
   });
 
-  static Future<void> show(BuildContext context, {required int orderId}) {
+  static Future<void> show(
+    BuildContext context, {
+    required int orderId,
+    bool? isRetirada,
+  }) {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => OrderTrackingDialog(orderId: orderId),
+      builder: (_) => OrderTrackingDialog(
+        orderId: orderId,
+        initialIsRetirada: isRetirada,
+      ),
     );
   }
 
@@ -36,6 +45,7 @@ class _OrderTrackingDialogState extends State<OrderTrackingDialog> {
   OrderStatus _currentStatus = OrderStatus.aguardandoConfirmacao;
   DateTime? _lastUpdatedAt;
   bool _isLoading = false;
+  bool _isRetirada = false;
 
   static const Duration _pollingInterval = Duration(seconds: 8);
 
@@ -63,12 +73,19 @@ class _OrderTrackingDialogState extends State<OrderTrackingDialog> {
     setState(() => _isLoading = true);
 
     final order = await _service.fetchOrder(widget.orderId);
-    final newStatus = _service.extractStatus(order);
+    final isRetirada = widget.initialIsRetirada ?? _service.extractIsRetirada(order);
+    var newStatus = _service.extractStatus(order);
+
+    if (isRetirada && newStatus == OrderStatus.entregue) {
+      newStatus = OrderStatus.prontoParaRetirada;
+    }
+
     final updatedAt = _service.extractUpdatedAt(order);
 
     if (mounted) {
       setState(() {
         _currentStatus = newStatus;
+        _isRetirada = isRetirada;
         _lastUpdatedAt = updatedAt;
         _isLoading = false;
       });
@@ -249,7 +266,7 @@ class _OrderTrackingDialogState extends State<OrderTrackingDialog> {
   }
 
   Widget _buildTimeline(BuildContext context) {
-    final steps = OrderTrackingConfig.steps;
+    final steps = OrderTrackingConfig.stepsFor(isRetirada: _isRetirada);
     final currentIndex = steps.indexWhere((s) => s.status == _currentStatus);
 
     return SizedBox(
@@ -291,6 +308,8 @@ class _OrderTrackingDialogState extends State<OrderTrackingDialog> {
         return const Color(0xFF00A650); // green
       case OrderStatus.entregue:
         return const Color(0xFF00A650); // green
+      case OrderStatus.prontoParaRetirada:
+        return const Color(0xFF00A650); // green
       case OrderStatus.cancelado:
         return const Color(0xFFE31E24); // red
     }
@@ -306,6 +325,8 @@ class _OrderTrackingDialogState extends State<OrderTrackingDialog> {
         return Icons.moped_outlined;
       case OrderStatus.entregue:
         return Icons.done_all_outlined;
+      case OrderStatus.prontoParaRetirada:
+        return Icons.storefront_outlined;
       case OrderStatus.cancelado:
         return Icons.cancel_outlined;
     }
@@ -321,6 +342,8 @@ class _OrderTrackingDialogState extends State<OrderTrackingDialog> {
         return 'Em rota de entrega';
       case OrderStatus.entregue:
         return 'Pedido entregue';
+      case OrderStatus.prontoParaRetirada:
+        return 'Pronto para retirada';
       case OrderStatus.cancelado:
         return 'Pedido cancelado';
     }

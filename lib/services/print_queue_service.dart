@@ -56,6 +56,8 @@ class PrintQueueService {
         'forma_pagamento_id': checkoutData.paymentMethod.id.toString(),
         'forma_pagamento': checkoutData.formaPagamentoLabel,
         'pagar_na_entrega': checkoutData.isEntrega,
+        'troco': checkoutData.precisaTroco,
+        'valor_troco': checkoutData.precisaTroco ? checkoutData.valorTroco : 0.0,
       },
       'mensagem': mensagem,
       'criado_em': DateTime.now().toIso8601String(),

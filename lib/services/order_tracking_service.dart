@@ -208,6 +208,27 @@ class OrderTrackingService {
     if (order == null) return null;
     final raw = order['updated_at'] as String? ?? order['created_at'] as String?;
     if (raw == null || raw.isEmpty) return null;
-    return DateTime.tryParse(raw);
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return null;
+    // Converte para o fuso horário local do dispositivo antes de exibir.
+    return parsed.toLocal();
+  }
+
+  /// Indica se o pedido é de retirada na loja.
+  ///
+  /// Aceita os valores usados no campo `tipo_atendimento` do backend,
+  /// como 'RETIRADA', 'ENTREGA', 'BALCAO', etc.
+  bool extractIsRetirada(Map<String, dynamic>? order) {
+    if (order == null) return false;
+    final raw = order['tipo_atendimento'] as String? ??
+        order['tipo_entrega'] as String?;
+    if (raw == null) return false;
+    final normalized = raw.toUpperCase().trim();
+    return normalized == 'RETIRADA' ||
+        normalized == 'RETIRAR' ||
+        normalized == 'RETIRAR_NA_LOJA' ||
+        normalized == 'RETIRAR NA LOJA' ||
+        normalized == 'BALCAO' ||
+        normalized == 'BALCÃO';
   }
 }
