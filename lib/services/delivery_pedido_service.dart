@@ -50,6 +50,7 @@ class DeliveryPedidoService {
       'subtotal': subtotal,
       'taxa_entrega': taxaEntrega,
       'valor_total': valorTotal,
+      'forma_pagto_id': checkoutData.paymentMethod.id,
       'items': itens.map(_construirItem).toList(),
     };
 
