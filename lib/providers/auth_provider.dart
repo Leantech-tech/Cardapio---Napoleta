@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/api_config.dart';
@@ -37,10 +39,24 @@ class AuthProvider extends ChangeNotifier {
 
   AuthProvider();
 
+  /// Retorna true quando o app roda em uma plataforma nativa (Android/iOS).
+  /// No Web essa checagem nunca é executada para evitar exceções de `Platform`.
+  static bool _isNativeMobilePlatform() {
+    if (kIsWeb) return false;
+    try {
+      return Platform.isAndroid || Platform.isIOS;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _useComandaFeature = prefs.getBool(_keyUseComandaFeature) ?? false;
-    _useTotenMode = prefs.getBool(_keyUseTotenMode) ?? false;
+    // Em APKs nativos o modo de uso padrão deve ser "toten", enquanto no
+    // Web o padrão continua sendo "link". Se o usuário já salvou uma
+    // preferência explicitamente, ela é respeitada.
+    _useTotenMode = prefs.getBool(_keyUseTotenMode) ?? _isNativeMobilePlatform();
     _storeAddress = prefs.getString(_keyStoreAddress) ?? '';
     _whatsappNumber = prefs.getString(_keyWhatsappNumber) ?? '';
     notifyListeners();

@@ -619,7 +619,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   tooltip: 'Configurações',
                   visualDensity: isMobile ? VisualDensity.compact : VisualDensity.standard,
                 ),
-              if (!authProvider.useTotenMode && !authProvider.useComandaFeature)
+              if (!authProvider.useComandaFeature)
                 IconButton(
                   onPressed: _acompanharPedido,
                   icon: Icon(
@@ -1127,7 +1127,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               final isDesktop = width >= 1100;
               final isMobile = width < 700;
               final useCompactCards = isTablet && !isDesktop;
-              final crossAxisCount = isDesktop ? 3 : (useCompactCards ? 1 : (isTablet ? 2 : 1));
+              final crossAxisCount = isDesktop ? 3 : (isTablet ? 2 : 1);
               final isGrid = crossAxisCount > 1;
 
               return PopScope(

@@ -20,7 +20,30 @@ class ProductCardGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
+    final isTablet = screenWidth >= 700;
+    final isDesktop = screenWidth >= 1100;
     final isSmallPhone = screenWidth < 360;
+
+    final contentPadding = isDesktop
+        ? 18.0
+        : (isTablet ? 16.0 : (isSmallPhone ? 10.0 : 14.0));
+    final titleFontSize = isDesktop
+        ? 20.0
+        : (isTablet ? 18.0 : (isSmallPhone ? 14.0 : 16.0));
+    final descriptionFontSize = isDesktop
+        ? 14.0
+        : (isTablet ? 13.0 : (isSmallPhone ? 10.0 : 12.0));
+    final priceFontSize = isDesktop
+        ? 20.0
+        : (isTablet ? 18.0 : (isSmallPhone ? 16.0 : AppTheme.fontSize2Xl));
+    final addButtonSize = isDesktop
+        ? 48.0
+        : (isTablet ? 46.0 : (isSmallPhone ? 38.0 : 44.0));
+    final addIconSize = isDesktop
+        ? 24.0
+        : (isTablet ? 22.0 : (isSmallPhone ? 18.0 : 22.0));
+    final badgeIconSize = isTablet ? 16.0 : 14.0;
+    final badgeFontSize = isTablet ? 13.0 : AppTheme.fontSizeXs;
 
     return FadeInUp(
       duration: const Duration(milliseconds: 400),
@@ -63,10 +86,10 @@ class ProductCardGrid extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
-                    isSmallPhone ? 10 : 14,
-                    isSmallPhone ? 10 : 12,
-                    isSmallPhone ? 10 : 14,
-                    isSmallPhone ? 10 : 12,
+                    contentPadding,
+                    contentPadding * 0.85,
+                    contentPadding,
+                    contentPadding * 0.85,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,7 +97,7 @@ class ProductCardGrid extends StatelessWidget {
                       Text(
                         product.name,
                         style: GoogleFonts.poppins(
-                          fontSize: isSmallPhone ? 14 : 16,
+                          fontSize: titleFontSize,
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textPrimary(context),
                         ),
@@ -86,7 +109,7 @@ class ProductCardGrid extends StatelessWidget {
                         Text(
                           product.description,
                           style: GoogleFonts.inter(
-                            fontSize: isSmallPhone ? 10 : 12,
+                            fontSize: descriptionFontSize,
                             color: AppTheme.textSecondary(context),
                             height: 1.35,
                           ),
@@ -102,14 +125,14 @@ class ProductCardGrid extends StatelessWidget {
                             children: [
                               Icon(
                                 Icons.tune,
-                                size: 14,
+                                size: badgeIconSize,
                                 color: AppTheme.brandPurple.withValues(alpha: 0.8),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'Personalizável',
                                 style: GoogleFonts.inter(
-                                  fontSize: AppTheme.fontSizeXs,
+                                  fontSize: badgeFontSize,
                                   color: AppTheme.brandPurple.withValues(alpha: 0.8),
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -124,14 +147,14 @@ class ProductCardGrid extends StatelessWidget {
                           Text(
                             product.priceDisplay,
                             style: GoogleFonts.poppins(
-                              fontSize: isSmallPhone ? 16 : AppTheme.fontSize2Xl,
+                              fontSize: priceFontSize,
                               fontWeight: FontWeight.w800,
                               color: AppTheme.brandPurple,
                             ),
                           ),
                           Container(
-                            width: isSmallPhone ? 38 : 44,
-                            height: isSmallPhone ? 38 : 44,
+                            width: addButtonSize,
+                            height: addButtonSize,
                             decoration: BoxDecoration(
                               color: AppTheme.brandPurple,
                               borderRadius: BorderRadius.circular(isSmallPhone ? 10 : 12),
@@ -146,7 +169,7 @@ class ProductCardGrid extends StatelessWidget {
                             child: Icon(
                               Icons.add,
                               color: Colors.white,
-                              size: isSmallPhone ? 18 : 22,
+                              size: addIconSize,
                             ),
                           ),
                         ],
