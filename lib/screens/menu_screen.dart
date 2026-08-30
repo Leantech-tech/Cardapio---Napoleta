@@ -28,6 +28,7 @@ import '../widgets/cart_panel.dart';
 import '../widgets/mini_cart_preview.dart';
 import '../widgets/order_checkout_dialog.dart';
 import '../widgets/order_tracking_cpf_dialog.dart';
+import '../widgets/payment_method_selector_dialog.dart';
 import '../widgets/totem_mode_selector.dart';
 import '../services/cart_checkout_service.dart';
 import '../services/barcode_scanner_service.dart';
@@ -1127,8 +1128,11 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               final isDesktop = width >= 1100;
               final isMobile = width < 700;
               final useCompactCards = isTablet && !isDesktop;
-              final crossAxisCount = isDesktop ? 3 : (isTablet ? 2 : 1);
+              // No tablet os cards permanecem na horizontal (lista), igual ao
+              // mobile. Somente no desktop usamos o grid com 3 colunas.
+              final crossAxisCount = isDesktop ? 3 : 1;
               final isGrid = crossAxisCount > 1;
+              final miniCartWidth = isDesktop ? 320.0 : 280.0;
 
               return PopScope(
                 canPop: false,
@@ -1213,6 +1217,10 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                                       menuProvider,
                                       constraints.maxHeight,
                                     ),
+                                    // Reserva o espaço ocupado pelo MiniCartPreview
+                                    // para que os cards não fiquem por baixo dele.
+                                    if (showMiniCart && !_isScreensaverActive)
+                                      SizedBox(width: miniCartWidth + 16),
                                   ],
                                 ),
                         ),
@@ -1282,11 +1290,28 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
 
                   if (checkoutData == null || !context.mounted) return;
 
+                  // No modo totem exibe o popup de forma de pagamento antes
+                  // de enviar o pedido, consultando as formas cadastradas.
+                  if (authProvider.useTotenMode) {
+                    checkoutData = await PaymentMethodSelectorDialog.show(
+                      context,
+                      checkoutData: checkoutData,
+                    );
+                    if (checkoutData == null || !context.mounted) return;
+                  }
+
                   final cart = context.read<CartProvider>();
                   await const CartCheckoutService().sendOrder(
                     context,
                     cart,
                     checkoutData: checkoutData,
+                    onSuccess: () {
+                      if (!context.mounted) return;
+                      if (authProvider.useTotenMode) {
+                        checkoutProvider.clear();
+                        _mostrarSeletorModalidadeTotem();
+                      }
+                    },
                   );
                 },
               ),

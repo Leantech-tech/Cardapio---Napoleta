@@ -374,12 +374,15 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
       return;
     }
 
-    if (_selectedPaymentMethod == null) {
+    // No modo totem a forma de pagamento é escolhida depois, na finalização.
+    if (!widget.isTotem && _selectedPaymentMethod == null) {
       setState(() => _error = 'Selecione uma forma de pagamento.');
       return;
     }
 
-    if (_tipoEntrega == TipoEntrega.entrega && _isDinheiro(_selectedPaymentMethod)) {
+    if (!widget.isTotem &&
+        _tipoEntrega == TipoEntrega.entrega &&
+        _isDinheiro(_selectedPaymentMethod)) {
       if (_precisaTroco == null) {
         setState(() => _error = 'Informe se precisa de troco.');
         return;
@@ -428,11 +431,27 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
 
       if (!mounted) return;
 
-      final valorTroco = _tipoEntrega == TipoEntrega.entrega &&
+      final valorTroco = !widget.isTotem &&
+              _tipoEntrega == TipoEntrega.entrega &&
               _isDinheiro(_selectedPaymentMethod) &&
               _precisaTroco == true
           ? _parseValorMonetario(_trocoController.text)
           : 0.0;
+
+      // No modo totem usa uma forma de pagamento provisória; o popup de
+      // finalização substituirá pela escolhida pelo cliente.
+      final paymentMethod = !widget.isTotem
+          ? _selectedPaymentMethod!
+          : (context.read<PaymentMethodProvider>().methods.isNotEmpty
+              ? context.read<PaymentMethodProvider>().methods.first
+              : const PaymentMethod(
+                  id: 0,
+                  descricao: 'Não selecionada',
+                  permiteParcelamento: false,
+                  parcelasMaximas: 1,
+                  intervaloPadrao: 30,
+                  isAprazo: false,
+                ));
 
       final data = OrderCheckoutData(
         tipoEntrega: _tipoEntrega!,
@@ -444,10 +463,10 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         cidade: enderecoUsado?.cidade ?? '',
         estado: enderecoUsado?.estado ?? '',
         cep: enderecoUsado?.cep ?? '',
-        paymentMethod: _selectedPaymentMethod!,
+        paymentMethod: paymentMethod,
         customerId: cadastrado.id,
         addressId: enderecoUsado?.id,
-        precisaTroco: _precisaTroco ?? false,
+        precisaTroco: !widget.isTotem ? (_precisaTroco ?? false) : false,
         valorTroco: valorTroco,
       );
 
@@ -695,22 +714,24 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
           const SizedBox(height: 8),
           _buildAddressDropdown(),
         ],
-        const SizedBox(height: 16),
-        Text(
-          'Forma de pagamento',
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary(context),
-          ),
-        ),
-        const SizedBox(height: 8),
-        _buildPaymentDropdown(),
-        if (isEntrega && _isDinheiro(_selectedPaymentMethod)) ...[
+        if (!widget.isTotem) ...[
           const SizedBox(height: 16),
-          _buildTrocoSection(),
+          Text(
+            'Forma de pagamento',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary(context),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildPaymentDropdown(),
+          if (isEntrega && _isDinheiro(_selectedPaymentMethod)) ...[
+            const SizedBox(height: 16),
+            _buildTrocoSection(),
+          ],
         ],
-        if (isEntrega) ...[
+        if (isEntrega && !widget.isTotem) ...[
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),

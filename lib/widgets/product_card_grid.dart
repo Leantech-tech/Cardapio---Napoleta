@@ -87,9 +87,9 @@ class ProductCardGrid extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
                     contentPadding,
-                    contentPadding * 0.85,
+                    contentPadding * 0.8,
                     contentPadding,
-                    contentPadding * 0.85,
+                    contentPadding * 0.6,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,10 +117,10 @@ class ProductCardGrid extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       if (product.optionGroups.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.only(bottom: 6),
                           child: Row(
                             children: [
                               Icon(
@@ -144,14 +144,19 @@ class ProductCardGrid extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            product.priceDisplay,
-                            style: GoogleFonts.poppins(
-                              fontSize: priceFontSize,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.brandPurple,
+                          Flexible(
+                            child: Text(
+                              product.priceDisplay,
+                              style: GoogleFonts.poppins(
+                                fontSize: priceFontSize,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.brandPurple,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 6),
                           Container(
                             width: addButtonSize,
                             height: addButtonSize,

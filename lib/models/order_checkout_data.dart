@@ -50,6 +50,26 @@ class OrderCheckoutData {
     return buffer.toString();
   }
 
+  /// Cria uma cópia dos dados trocando apenas a forma de pagamento.
+  OrderCheckoutData copyWithPaymentMethod(PaymentMethod method) {
+    return OrderCheckoutData(
+      tipoEntrega: tipoEntrega,
+      nome: nome,
+      cpf: cpf,
+      rua: rua,
+      numero: numero,
+      bairro: bairro,
+      cidade: cidade,
+      estado: estado,
+      cep: cep,
+      paymentMethod: method,
+      customerId: customerId,
+      addressId: addressId,
+      precisaTroco: precisaTroco,
+      valorTroco: valorTroco,
+    );
+  }
+
   /// Endereco completo formatado a partir dos campos separados.
   String get endereco {
     final partes = <String>[

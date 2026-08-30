@@ -6,6 +6,7 @@ import '../data/api_config.dart';
 import '../models/order_checkout_data.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
+import '../services/balcao_pedido_service.dart';
 import '../services/comanda_service.dart';
 import '../services/delivery_pedido_service.dart';
 import '../services/order_tracking_service.dart';
@@ -52,20 +53,21 @@ class CartCheckoutService {
       return;
     }
 
-    // No modo totem o pedido termina aqui: não sai por WhatsApp nem comanda.
+    // No modo totem o pedido é salvo no módulo Balcão do Minha Loja. O
+    // backend já cuida da fila de impressão na mesma transação, então o
+    // Cardápio não deve inserir diretamente em fila_impressao.
     if (authProvider.useTotenMode) {
       try {
-        await PrintQueueService().adicionarPedido(
-          itens: cart.items,
-          checkoutData: checkoutData,
-          isTotem: true,
-          storeAddress: authProvider.storeAddress,
+        await BalcaoPedidoService().salvarPedido(
+          cart.items,
+          checkoutData,
+          usuarioId: authProvider.userId,
         );
       } catch (e) {
         if (!context.mounted) return;
         _showSnackBar(
           context,
-          'Erro ao enfileirar pedido para impressão: $e',
+          'Erro ao salvar pedido no balcão: $e',
           Colors.red[600],
         );
         return;
@@ -74,7 +76,7 @@ class CartCheckoutService {
       if (!context.mounted) return;
       _showSnackBar(
         context,
-        'Pedido enviado para impressão!',
+        'Pedido enviado para o balcão!',
         Colors.green[600],
       );
       cart.clear();
