@@ -31,10 +31,14 @@ class PrintQueueService {
     required bool isTotem,
     String? storeAddress,
     int? deliveryPedidoId,
+    double? valorTotalPedido,
   }) async {
     final empresaId = ApiConfig.empresaId;
     final origem = isTotem ? _origemTotem : _origemLink;
     final setor = isTotem ? _setorBalcao : _setorDelivery;
+    final dataHora = DateTime.now().toIso8601String();
+    final totalPedido = valorTotalPedido ??
+        itens.fold<double>(0.0, (sum, item) => sum + item.total);
 
     final mensagem = _buildMessage(
       itens: itens,
@@ -60,10 +64,20 @@ class PrintQueueService {
         'valor_troco': checkoutData.precisaTroco ? checkoutData.valorTroco : 0.0,
       },
       'mensagem': mensagem,
-      'criado_em': DateTime.now().toIso8601String(),
+      'criado_em': dataHora,
       'empresa_id': empresaId,
       'total_itens': itens.fold<int>(0, (sum, item) => sum + item.quantity),
-      'valor_total': itens.fold<double>(0.0, (sum, item) => sum + item.total),
+      'valor_total': totalPedido,
+      // Campos financeiros enriquecidos para leitura por setor.
+      'tipo': isTotem ? 'balcao_pedido' : 'delivery_pedido',
+      'evento': 'CRIACAO',
+      'cancelado': false,
+      'data': dataHora,
+      'cabecalho': {
+        'pedido': deliveryPedidoId ?? 0,
+        'cliente': checkoutData.nome,
+      },
+      'valor_total_pedido': totalPedido,
     };
 
     await _db.insert('fila_impressao', {
@@ -95,7 +109,26 @@ class PrintQueueService {
       'quantidade': item.quantity,
       'valor_total': item.total,
       'valor_unitario': item.unitPrice,
+      'is_fracionada': false,
+      'modificadores': _buildModificadores(item),
     };
+  }
+
+  List<Map<String, dynamic>> _buildModificadores(CartItem item) {
+    final modificadores = <Map<String, dynamic>>[];
+    for (final entry in item.selectedOptions.entries) {
+      for (final optionId in entry.value) {
+        final qty = item.selectedOptionQuantities[optionId] ?? 1;
+        final valorAdicional = item.selectedOptionPrices[optionId] ?? 0.0;
+        modificadores.add({
+          'id': optionId,
+          'grupo_id': entry.key,
+          'quantidade': qty,
+          'valor_adicional': valorAdicional,
+        });
+      }
+    }
+    return modificadores;
   }
 
   String _buildMessage({

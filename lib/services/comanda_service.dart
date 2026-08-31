@@ -166,6 +166,7 @@ class ComandaService {
     List<CartItem> itens,
     String numeroComanda, {
     OrderCheckoutData? observacao,
+    double? valorTotal,
   }) async {
     final buffer = StringBuffer();
     buffer.writeln('=== NOVO PEDIDO - COMANDA $numeroComanda ===');
@@ -194,12 +195,59 @@ class ComandaService {
       }
     }
 
+    final dataHora = DateTime.now().toIso8601String();
+    final totalComanda = valorTotal ??
+        itens.fold<double>(0.0, (sum, item) => sum + item.total);
+
     await _db.insert('fila_impressao', {
       'empresa_id': empresaId,
       'setor': 'Cozinha',
-      'conteudo': {'texto': buffer.toString()},
+      'conteudo': {
+        'texto': buffer.toString(),
+        // Campos financeiros enriquecidos para leitura por setor.
+        'tipo': 'comanda',
+        'evento': 'CRIACAO',
+        'cancelado': false,
+        'data': dataHora,
+        'cabecalho': {
+          'pedido': comandaId,
+          'cliente': observacao?.nome ?? '',
+        },
+        'valor_total_pedido': totalComanda,
+        'itens': itens.map((item) => _itemToJson(item)).toList(),
+      },
       'impresso': false,
-      'criado_em': DateTime.now().toIso8601String(),
+      'criado_em': dataHora,
     });
+  }
+
+  Map<String, dynamic> _itemToJson(CartItem item) {
+    final observacao = item.observation?.trim();
+    return {
+      'produto': item.name,
+      'quantidade': item.quantity,
+      'is_fracionada': false,
+      'valor_unitario': item.unitPrice,
+      'valor_total': item.total,
+      'observacao': observacao != null && observacao.isNotEmpty ? observacao : null,
+      'modificadores': _buildModificadores(item),
+    };
+  }
+
+  List<Map<String, dynamic>> _buildModificadores(CartItem item) {
+    final modificadores = <Map<String, dynamic>>[];
+    for (final entry in item.selectedOptions.entries) {
+      for (final optionId in entry.value) {
+        final qty = item.selectedOptionQuantities[optionId] ?? 1;
+        final valorAdicional = item.selectedOptionPrices[optionId] ?? 0.0;
+        modificadores.add({
+          'id': optionId,
+          'grupo_id': entry.key,
+          'quantidade': qty,
+          'valor_adicional': valorAdicional,
+        });
+      }
+    }
+    return modificadores;
   }
 }

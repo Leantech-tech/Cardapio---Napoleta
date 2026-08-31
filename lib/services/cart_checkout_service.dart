@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/api_config.dart';
+import '../models/cart_item.dart';
 import '../models/order_checkout_data.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
@@ -57,8 +60,9 @@ class CartCheckoutService {
     // backend já cuida da fila de impressão na mesma transação, então o
     // Cardápio não deve inserir diretamente em fila_impressao.
     if (authProvider.useTotenMode) {
+      Map<String, dynamic>? pedidoCriado;
       try {
-        await BalcaoPedidoService().salvarPedido(
+        pedidoCriado = await BalcaoPedidoService().salvarPedido(
           cart.items,
           checkoutData,
           usuarioId: authProvider.userId,
@@ -74,12 +78,15 @@ class CartCheckoutService {
       }
 
       if (!context.mounted) return;
-      _showSnackBar(
-        context,
-        'Pedido enviado para o balcão!',
-        Colors.green[600],
-      );
+      final itensPedido = List<CartItem>.from(cart.items);
+      final totalPedido = cart.totalPrice;
       cart.clear();
+      await _mostrarDialogSucessoTotem(
+        context,
+        pedidoCriado: pedidoCriado,
+        itens: itensPedido,
+        total: totalPedido,
+      );
       onSuccess?.call();
       return;
     }
@@ -177,6 +184,7 @@ class CartCheckoutService {
         cart.items,
         numero,
         observacao: checkoutData,
+        valorTotal: cart.totalPrice,
       );
 
       if (!context.mounted) return;
@@ -273,12 +281,15 @@ class CartCheckoutService {
     if (checkoutData != null) {
       try {
         final deliveryPedidoId = savedOrder != null ? savedOrder['id'] as int? : null;
+        final deliveryFee = context.read<DeliveryProvider>().deliveryFee ?? 0.0;
+        final valorTotalPedido = cart.totalPrice + deliveryFee;
         await PrintQueueService().adicionarPedido(
           itens: cart.items,
           checkoutData: checkoutData,
           isTotem: false,
           storeAddress: authProvider.storeAddress,
           deliveryPedidoId: deliveryPedidoId,
+          valorTotalPedido: valorTotalPedido,
         );
       } catch (e) {
         if (!context.mounted) return;
@@ -374,6 +385,165 @@ class CartCheckoutService {
         Colors.red[600],
       );
     }
+  }
+
+  Future<void> _mostrarDialogSucessoTotem(
+    BuildContext context, {
+    required Map<String, dynamic>? pedidoCriado,
+    required List<CartItem> itens,
+    required double total,
+  }) async {
+    if (!context.mounted) return;
+
+    final numeroPedido = pedidoCriado?['numero'] ?? pedidoCriado?['id'] ?? '—';
+    Timer? autoCloseTimer;
+
+    void closeDialog() {
+      autoCloseTimer?.cancel();
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
+
+    autoCloseTimer = Timer(const Duration(seconds: 30), closeDialog);
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green[600], size: 32),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'pedido finalizado com sucesso!',
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary(context),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Número do pedido: $numeroPedido',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary(context),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Itens:',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textSecondary(context),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 220),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: itens.map((item) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${item.quantity}x ${item.name}',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: AppTheme.textPrimary(context),
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  'R\$ ${item.total.toStringAsFixed(2).replaceAll('.', ',')}',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textPrimary(context),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total:',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary(context),
+                      ),
+                    ),
+                    Text(
+                      'R\$ ${total.toStringAsFixed(2).replaceAll('.', ',')}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.brandPurple,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: closeDialog,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.brandPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'OK',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _showSnackBar(

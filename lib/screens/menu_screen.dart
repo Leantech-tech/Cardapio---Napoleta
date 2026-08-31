@@ -15,7 +15,7 @@ import '../providers/auth_provider.dart';
 import '../models/order_checkout_data.dart';
 import '../theme/app_theme.dart';
 import '../data/api_config.dart';
-import '../widgets/screensaver_carousel.dart';
+
 import '../widgets/category_image.dart';
 import '../widgets/product_card.dart';
 import '../widgets/login_sheet.dart';
@@ -28,7 +28,7 @@ import '../widgets/cart_panel.dart';
 import '../widgets/mini_cart_preview.dart';
 import '../widgets/order_checkout_dialog.dart';
 import '../widgets/order_tracking_cpf_dialog.dart';
-import '../widgets/payment_method_selector_dialog.dart';
+
 import '../widgets/totem_mode_selector.dart';
 import '../services/cart_checkout_service.dart';
 import '../services/barcode_scanner_service.dart';
@@ -53,11 +53,6 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   int _adminTapCount = 0;
   Timer? _adminTapResetTimer;
 
-  // Controle de inatividade para o screensaver do carrossel.
-  Timer? _inactivityTimer;
-  bool _isScreensaverActive = false;
-  static const _inactivityDuration = Duration(minutes: 1);
-
   // Listener para leituras de scanner de código de barras.
   StreamSubscription<String>? _barcodeSubscription;
 
@@ -81,7 +76,6 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _startInactivityTimer();
     final authProvider = context.read<AuthProvider>();
     _barcodeSubscription = BarcodeScannerService().onBarcode.listen((barcode) {
       if (!authProvider.useComandaFeature) return;
@@ -109,28 +103,62 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       if (!mounted) return;
     }
 
-    final modo = await TotemModeSelector.show(context);
+    final menuProvider = context.read<MenuProvider>();
+    final modo = await TotemModeSelector.show(
+      context,
+      products: menuProvider.products,
+    );
     if (!mounted) return;
 
     switch (modo) {
       case TotemMode.acai:
         await _solicitarIdentificacaoCliente();
       case TotemMode.paleta:
-        // TODO: vincular ao fluxo específico de paletas.
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Opção Paleta será integrada em breve.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-            ),
-            backgroundColor: AppTheme.brandPurple,
-            behavior: SnackBarBehavior.floating,
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
             ),
-            margin: const EdgeInsets.all(16),
+            title: Text(
+              'Em breve',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary(context),
+              ),
+            ),
+            content: Text(
+              'Cardápio das paletas está em desenvolvimento!',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: AppTheme.textPrimary(context),
+              ),
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.brandPurple,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'OK',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
         );
+        // Volta ao seletor inicial para que o cliente possa escolher Açaí.
+        if (mounted) {
+          await _mostrarSeletorModalidadeTotem();
+        }
       case null:
         // Usuário fechou o seletor sem escolher; nada a fazer.
         break;
@@ -174,38 +202,8 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   void dispose() {
     _barcodeSubscription?.cancel();
     _adminTapResetTimer?.cancel();
-    _inactivityTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  void _startInactivityTimer() {
-    _inactivityTimer?.cancel();
-    _inactivityTimer = Timer(_inactivityDuration, () {
-      if (mounted) {
-        setState(() => _isScreensaverActive = true);
-        context.read<CheckoutProvider>().clear();
-      }
-    });
-  }
-
-  void _resetInactivityTimer() {
-    final estavaAtivo = _isScreensaverActive;
-    if (_isScreensaverActive) {
-      setState(() => _isScreensaverActive = false);
-    }
-    _startInactivityTimer();
-
-    if (estavaAtivo && mounted) {
-      final authProvider = context.read<AuthProvider>();
-      if (authProvider.useTotenMode) {
-        _mostrarSeletorModalidadeTotem();
-      }
-    }
-  }
-
-  void _handleUserInteraction([_]) {
-    _resetInactivityTimer();
   }
 
   @override
@@ -1102,26 +1100,13 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     final filteredProducts = getFilteredProducts(allProducts);
     final sectionTitle = getSectionTitle(categories);
 
-    final screensaverWidget = _isScreensaverActive
-        ? Positioned.fill(
-            child: ScreensaverCarousel(
-              products: allProducts,
-              onInteract: _handleUserInteraction,
-            ),
-          )
-        : const SizedBox.shrink();
-
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isDesktop = screenWidth >= 1100;
     final showMiniCart = screenWidth >= 700;
 
     return Stack(
       children: [
-        Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: _handleUserInteraction,
-          onPointerMove: _handleUserInteraction,
-          child: LayoutBuilder(
+        LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
               final isTablet = width >= 700;
@@ -1219,7 +1204,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                                     ),
                                     // Reserva o espaço ocupado pelo MiniCartPreview
                                     // para que os cards não fiquem por baixo dele.
-                                    if (showMiniCart && !_isScreensaverActive)
+                                    if (showMiniCart)
                                       SizedBox(width: miniCartWidth + 16),
                                   ],
                                 ),
@@ -1260,9 +1245,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
               );
             },
           ),
-        ),
-        screensaverWidget,
-        if (showMiniCart && !_isScreensaverActive)
+        if (showMiniCart)
           Positioned(
             top: 90,
             right: 16,
@@ -1289,16 +1272,6 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   }
 
                   if (checkoutData == null || !context.mounted) return;
-
-                  // No modo totem exibe o popup de forma de pagamento antes
-                  // de enviar o pedido, consultando as formas cadastradas.
-                  if (authProvider.useTotenMode) {
-                    checkoutData = await PaymentMethodSelectorDialog.show(
-                      context,
-                      checkoutData: checkoutData,
-                    );
-                    if (checkoutData == null || !context.mounted) return;
-                  }
 
                   final cart = context.read<CartProvider>();
                   await const CartCheckoutService().sendOrder(

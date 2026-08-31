@@ -39,7 +39,7 @@ class DeliveryPedidoService {
       'cotacao_token': '',
       'endereco_logradouro': checkoutData.rua,
       'endereco_numero': checkoutData.numero,
-      'endereco_complemento': '',
+      'endereco_complemento': checkoutData.complemento,
       'endereco_bairro': checkoutData.bairro,
       'endereco_cidade': checkoutData.cidade,
       'endereco_uf': checkoutData.estado.toUpperCase(),

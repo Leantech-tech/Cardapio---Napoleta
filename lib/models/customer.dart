@@ -5,6 +5,8 @@ class Customer {
   final String nome;
   final String cpf;
   final String rua;
+  final String numero;
+  final String complemento;
   final String bairro;
   final String cidade;
   final String estado;
@@ -17,6 +19,8 @@ class Customer {
     required this.nome,
     required this.cpf,
     this.rua = '',
+    this.numero = '',
+    this.complemento = '',
     this.bairro = '',
     this.cidade = '',
     this.estado = '',
@@ -31,6 +35,8 @@ class Customer {
       nome: (map['nome'] ?? '').toString(),
       cpf: (map['cpf'] ?? '').toString(),
       rua: (map['rua'] ?? '').toString(),
+      numero: (map['numero'] ?? '').toString(),
+      complemento: (map['complemento'] ?? '').toString(),
       bairro: (map['bairro'] ?? '').toString(),
       cidade: (map['cidade'] ?? '').toString(),
       estado: (map['estado'] ?? '').toString(),
@@ -64,6 +70,8 @@ class Customer {
       'nome': nome.trim(),
       'cpf': _somenteNumeros(cpf),
       'rua': rua.trim(),
+      'numero': numero.trim(),
+      'complemento': complemento.trim(),
       'bairro': bairro.trim(),
       'cidade': cidade.trim(),
       'estado': estado.trim().toUpperCase(),

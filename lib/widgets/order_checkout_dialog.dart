@@ -124,6 +124,26 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
     return buffer.toString();
   }
 
+  bool _cpfValido(String cpf) {
+    final numeros = cpf.replaceAll(RegExp(r'[^0-9]'), '');
+    if (numeros.length != 11) return false;
+
+    // Rejeita CPFs com todos os dígitos iguais.
+    if (RegExp(r'(\d)\1{10}').hasMatch(numeros)) return false;
+
+    int calcularDigitoVerificador(int pesoInicial) {
+      int soma = 0;
+      for (int i = 0; i < pesoInicial - 1; i++) {
+        soma += int.parse(numeros[i]) * (pesoInicial - i);
+      }
+      final resto = soma % 11;
+      return resto < 2 ? 0 : 11 - resto;
+    }
+
+    return calcularDigitoVerificador(10) == int.parse(numeros[9]) &&
+        calcularDigitoVerificador(11) == int.parse(numeros[10]);
+  }
+
   bool _isDinheiro(PaymentMethod? method) {
     if (method == null) return false;
     return method.descricao.toUpperCase().contains('DINHEIRO');
@@ -155,7 +175,11 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
 
   Future<void> _buscarClientePorCpf() async {
     final cpfLimpo = _cpfController.text.replaceAll(RegExp(r'[^0-9]'), '');
-    if (cpfLimpo.length != 11) return;
+    if (cpfLimpo.isEmpty) return;
+    if (!_cpfValido(cpfLimpo)) {
+      setState(() => _error = 'CPF incorreto');
+      return;
+    }
 
     setState(() => _isLoadingCustomer = true);
 
@@ -195,8 +219,9 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
   Future<void> _abrirGerenciadorEnderecos() async {
     setState(() => _error = null);
 
-    if (_cpfController.text.replaceAll(RegExp(r'[^0-9]'), '').length != 11) {
-      setState(() => _error = 'Informe o CPF do cliente antes de cadastrar endereços.');
+    final cpfLimpoEndereco = _cpfController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cpfLimpoEndereco.isEmpty || !_cpfValido(cpfLimpoEndereco)) {
+      setState(() => _error = 'Informe um CPF válido do cliente antes de cadastrar endereços.');
       return;
     }
 
@@ -359,13 +384,8 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
       return;
     }
 
-    if (cpfLimpo.isEmpty) {
-      setState(() => _error = 'O CPF é obrigatório.');
-      return;
-    }
-
-    if (cpfLimpo.length != 11) {
-      setState(() => _error = 'Digite um CPF válido com 11 dígitos.');
+    if (cpfLimpo.isNotEmpty && !_cpfValido(cpfLimpo)) {
+      setState(() => _error = 'CPF incorreto');
       return;
     }
 
@@ -459,6 +479,7 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         cpf: cadastrado.cpfFormatado,
         rua: enderecoUsado?.rua ?? '',
         numero: enderecoUsado?.numero ?? '',
+        complemento: enderecoUsado?.complemento ?? '',
         bairro: enderecoUsado?.bairro ?? '',
         cidade: enderecoUsado?.cidade ?? '',
         estado: enderecoUsado?.estado ?? '',
@@ -665,7 +686,7 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         const SizedBox(height: 20),
         _buildTextField(
           controller: _cpfController,
-          label: 'CPF *',
+          label: 'CPF',
           icon: Icons.badge_outlined,
           keyboardType: TextInputType.number,
           inputFormatters: [
@@ -687,7 +708,12 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
           onSubmitted: (_) => _buscarClientePorCpf(),
           onChanged: (value) {
             final numeros = value.replaceAll(RegExp(r'[^0-9]'), '');
-            if (numeros.length == 11 && !_isLoadingCustomer) {
+            if (numeros.isEmpty) {
+              setState(() {
+                _error = null;
+                _customerLoaded = null;
+              });
+            } else if (numeros.length == 11 && !_isLoadingCustomer) {
               _buscarClientePorCpf();
             } else if (_error != null && numeros.length < 11) {
               setState(() => _error = null);

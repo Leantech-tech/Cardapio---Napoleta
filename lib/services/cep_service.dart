@@ -70,6 +70,7 @@ class CepResult {
   /// Retorna os campos separados prontos para preenchimento do formulario.
   Map<String, String> get camposSeparados => {
         'rua': logradouro,
+        'complemento': complemento,
         'bairro': bairro,
         'cidade': localidade,
         'estado': uf,

@@ -39,6 +39,7 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
   final _cepController = TextEditingController();
   final _ruaController = TextEditingController();
   final _numeroController = TextEditingController();
+  final _complementoController = TextEditingController();
   final _bairroController = TextEditingController();
   final _cidadeController = TextEditingController();
   final _estadoController = TextEditingController();
@@ -65,6 +66,7 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
     _cepController.dispose();
     _ruaController.dispose();
     _numeroController.dispose();
+    _complementoController.dispose();
     _bairroController.dispose();
     _cidadeController.dispose();
     _estadoController.dispose();
@@ -110,6 +112,7 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
 
     final campos = resultado.camposSeparados;
     _ruaController.text = campos['rua'] ?? '';
+    _complementoController.text = campos['complemento'] ?? '';
     _bairroController.text = campos['bairro'] ?? '';
     _cidadeController.text = campos['cidade'] ?? '';
     _estadoController.text = campos['estado'] ?? '';
@@ -134,6 +137,7 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
     final address = CustomerAddress(
       rua: _ruaController.text,
       numero: _numeroController.text,
+      complemento: _complementoController.text,
       bairro: _bairroController.text,
       cidade: _cidadeController.text,
       estado: _estadoController.text,
@@ -146,6 +150,7 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
       _cepController.clear();
       _ruaController.clear();
       _numeroController.clear();
+      _complementoController.clear();
       _bairroController.clear();
       _cidadeController.clear();
       _estadoController.clear();
@@ -417,6 +422,13 @@ class _AddressManagerDialogState extends State<AddressManagerDialog> {
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField(
+                        controller: _complementoController,
+                        label: 'Complemento',
+                        icon: Icons.apartment_outlined,
+                        textCapitalization: TextCapitalization.sentences,
                       ),
                       const SizedBox(height: 12),
                       SizedBox(

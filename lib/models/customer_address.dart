@@ -4,6 +4,7 @@ class CustomerAddress {
   final String tipo;
   final String rua;
   final String numero;
+  final String complemento;
   final String bairro;
   final String cidade;
   final String estado;
@@ -17,6 +18,7 @@ class CustomerAddress {
     this.tipo = 'entrega',
     this.rua = '',
     this.numero = '',
+    this.complemento = '',
     this.bairro = '',
     this.cidade = '',
     this.estado = '',
@@ -32,6 +34,7 @@ class CustomerAddress {
       tipo: (map['tipo'] ?? 'entrega').toString(),
       rua: (map['rua'] ?? '').toString(),
       numero: (map['numero'] ?? '').toString(),
+      complemento: (map['complemento'] ?? '').toString(),
       bairro: (map['bairro'] ?? '').toString(),
       cidade: (map['cidade'] ?? '').toString(),
       estado: (map['estado'] ?? '').toString(),
@@ -51,6 +54,7 @@ class CustomerAddress {
       'tipo': tipo,
       'rua': rua.trim(),
       'numero': numero.trim(),
+      'complemento': complemento.trim(),
       'bairro': bairro.trim(),
       'cidade': cidade.trim(),
       'estado': estado.trim().toUpperCase(),
@@ -62,7 +66,7 @@ class CustomerAddress {
 
   String get endereco {
     final partes = <String>[
-      '${rua.trim()}${numero.trim().isNotEmpty ? ', ${numero.trim()}' : ''}',
+      '${rua.trim()}${numero.trim().isNotEmpty ? ', ${numero.trim()}' : ''}${complemento.trim().isNotEmpty ? ' - ${complemento.trim()}' : ''}',
       bairro.trim(),
       if (cidade.trim().isNotEmpty && estado.trim().isNotEmpty)
         '${cidade.trim()} - ${estado.trim().toUpperCase()}'
@@ -82,6 +86,7 @@ class CustomerAddress {
     String? tipo,
     String? rua,
     String? numero,
+    String? complemento,
     String? bairro,
     String? cidade,
     String? estado,
@@ -95,6 +100,7 @@ class CustomerAddress {
       tipo: tipo ?? this.tipo,
       rua: rua ?? this.rua,
       numero: numero ?? this.numero,
+      complemento: complemento ?? this.complemento,
       bairro: bairro ?? this.bairro,
       cidade: cidade ?? this.cidade,
       estado: estado ?? this.estado,
@@ -107,6 +113,7 @@ class CustomerAddress {
   bool isSameAddress(CustomerAddress other) {
     return _normalize(rua) == _normalize(other.rua) &&
         _normalize(numero) == _normalize(other.numero) &&
+        _normalize(complemento) == _normalize(other.complemento) &&
         _normalize(bairro) == _normalize(other.bairro) &&
         _normalize(cidade) == _normalize(other.cidade) &&
         _normalize(estado) == _normalize(other.estado) &&
