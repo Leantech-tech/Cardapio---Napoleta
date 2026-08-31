@@ -89,7 +89,6 @@ class PrintQueueService {
       'setor': setor,
       'conteudo': conteudo,
       'impresso': false,
-      'criado_em': DateTime.now().toIso8601String(),
     });
     debugPrint('[PrintQueueService] fila_impressao inserida - response=$response');
   }

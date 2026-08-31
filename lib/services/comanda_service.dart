@@ -217,7 +217,6 @@ class ComandaService {
         'itens': itens.map((item) => _itemToJson(item)).toList(),
       },
       'impresso': false,
-      'criado_em': dataHora,
     });
   }
 
