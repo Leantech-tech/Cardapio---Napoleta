@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/product.dart';
 import '../theme/app_theme.dart';
 import 'screensaver_carousel.dart';
@@ -115,7 +114,7 @@ class _TotemModeSelectorState extends State<TotemModeSelector> {
                                     child: _buildOptionCard(
                                       context,
                                       iconWidget: Icon(
-                                        LucideIcons.iceCreamBowl,
+                                        Icons.ramen_dining,
                                         size: 72,
                                         color: AppTheme.brandPurple,
                                       ),
@@ -147,7 +146,7 @@ class _TotemModeSelectorState extends State<TotemModeSelector> {
                                     child: _buildOptionCard(
                                       context,
                                       iconWidget: Icon(
-                                        LucideIcons.iceCreamBowl,
+                                        Icons.ramen_dining,
                                         size: 72,
                                         color: AppTheme.brandPurple,
                                       ),
