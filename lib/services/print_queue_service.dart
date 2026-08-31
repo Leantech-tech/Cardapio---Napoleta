@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show debugPrint;
+
 import '../data/api_config.dart';
 import '../models/cart_item.dart';
 import '../models/order_checkout_data.dart';
@@ -33,6 +35,7 @@ class PrintQueueService {
     int? deliveryPedidoId,
     double? valorTotalPedido,
   }) async {
+    debugPrint('[PrintQueueService] adicionarPedido iniciado - isTotem=$isTotem, deliveryPedidoId=$deliveryPedidoId');
     final empresaId = ApiConfig.empresaId;
     final origem = isTotem ? _origemTotem : _origemLink;
     final setor = isTotem ? _setorBalcao : _setorDelivery;
@@ -80,13 +83,15 @@ class PrintQueueService {
       'valor_total_pedido': totalPedido,
     };
 
-    await _db.insert('fila_impressao', {
+    debugPrint('[PrintQueueService] inserindo na fila: empresa=$empresaId, setor=$setor, delivery_pedido_id=$deliveryPedidoId');
+    final response = await _db.insert('fila_impressao', {
       'empresa_id': empresaId,
       'setor': setor,
       'conteudo': conteudo,
       'impresso': false,
       'criado_em': DateTime.now().toIso8601String(),
     });
+    debugPrint('[PrintQueueService] fila_impressao inserida - response=$response');
   }
 
   Map<String, dynamic> _itemToJson(CartItem item) {

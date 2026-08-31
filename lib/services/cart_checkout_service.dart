@@ -281,6 +281,7 @@ class CartCheckoutService {
     if (checkoutData != null) {
       try {
         final deliveryPedidoId = savedOrder != null ? savedOrder['id'] as int? : null;
+        debugPrint('[CartCheckoutService] chamando PrintQueueService - deliveryPedidoId=$deliveryPedidoId');
         final deliveryFee = context.read<DeliveryProvider>().deliveryFee ?? 0.0;
         final valorTotalPedido = cart.totalPrice + deliveryFee;
         await PrintQueueService().adicionarPedido(
@@ -291,7 +292,9 @@ class CartCheckoutService {
           deliveryPedidoId: deliveryPedidoId,
           valorTotalPedido: valorTotalPedido,
         );
+        debugPrint('[CartCheckoutService] PrintQueueService finalizado com sucesso');
       } catch (e) {
+        debugPrint('[CartCheckoutService] erro no PrintQueueService: $e');
         if (!context.mounted) return;
         _showSnackBar(
           context,
