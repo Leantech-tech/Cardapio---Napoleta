@@ -53,6 +53,24 @@ class Product {
     this.optionGroups = const [],
   });
 
+  Product copyWith({double? price}) {
+    return Product(
+      id: id,
+      name: name,
+      description: description,
+      price: price ?? this.price,
+      imagePath: imagePath,
+      categoryId: categoryId,
+      ingredients: ingredients,
+      isActive: isActive,
+      badge: badge,
+      rating: rating,
+      prepTimeMinutes: prepTimeMinutes,
+      reviewCount: reviewCount,
+      optionGroups: optionGroups,
+    );
+  }
+
   factory Product.fromJson(Map<String, dynamic> json) {
     // Parseia optionGroups se vierem no JSON (do backend Go com join)
     List<ProductOptionGroup> groups = const [];

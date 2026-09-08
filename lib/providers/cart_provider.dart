@@ -5,6 +5,11 @@ import '../models/product.dart';
 class CartProvider extends ChangeNotifier {
   final List<CartItem> _items = [];
 
+  /// Preço base original (sem tabela de preço) por produto, capturado quando
+  /// o item entra no carrinho. Permite recalcular/restaurar preços quando o
+  /// cliente é identificado com tabela de preço depois de montar o carrinho.
+  final Map<int, double> _precosBase = {};
+
   List<CartItem> get items => List.unmodifiable(_items);
 
   int get totalItems => _items.fold(0, (sum, item) => sum + item.quantity);
@@ -34,6 +39,10 @@ class CartProvider extends ChangeNotifier {
     if (existingIndex >= 0) {
       _items[existingIndex].quantity += quantity;
     } else {
+      final produtoId = int.tryParse(product.id);
+      if (produtoId != null) {
+        _precosBase.putIfAbsent(produtoId, () => product.price);
+      }
       final cartItem = CartItem(
         id: '${product.id}_${DateTime.now().millisecondsSinceEpoch}',
         productId: product.id,
@@ -71,6 +80,29 @@ class CartProvider extends ChangeNotifier {
 
   void clear() {
     _items.clear();
+    _precosBase.clear();
+    notifyListeners();
+  }
+
+  /// Aplica os preços da tabela nos itens do carrinho.
+  /// Itens sem valor na tabela mantêm o preço normal.
+  void aplicarPrecos(Map<int, double> precos) {
+    for (final item in _items) {
+      final produtoId = int.tryParse(item.productId);
+      if (produtoId == null) continue;
+      final novoPreco = precos[produtoId] ?? _precosBase[produtoId];
+      if (novoPreco != null) item.basePrice = novoPreco;
+    }
+    notifyListeners();
+  }
+
+  /// Restaura o preço normal dos itens do carrinho.
+  void restaurarPrecosNormais() {
+    for (final item in _items) {
+      final produtoId = int.tryParse(item.productId);
+      final base = produtoId != null ? _precosBase[produtoId] : null;
+      if (base != null) item.basePrice = base;
+    }
     notifyListeners();
   }
 

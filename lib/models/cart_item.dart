@@ -3,7 +3,7 @@ class CartItem {
   final String productId;
   final String name;
   final String imagePath;
-  final double basePrice;
+  double basePrice;
   int quantity;
   String? observation;
   final Map<String, List<String>> selectedOptions;

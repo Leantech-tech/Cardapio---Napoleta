@@ -6,8 +6,11 @@ import '../models/customer.dart';
 import '../models/customer_address.dart';
 import '../models/order_checkout_data.dart';
 import '../models/payment_method.dart';
+import '../providers/cart_provider.dart';
+import '../providers/menu_provider.dart';
 import '../providers/payment_method_provider.dart';
 import '../services/customer_service.dart';
+import '../services/price_table_service.dart';
 import '../theme/app_theme.dart';
 import 'address_manager_dialog.dart';
 
@@ -187,6 +190,8 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
       final customer = await CustomerService().buscarPorCpf(cpfLimpo);
       if (!mounted) return;
 
+      await _aplicarTabelaDePrecoDoCliente(customer);
+
       setState(() {
         _customerLoaded = customer;
         _isLoadingCustomer = false;
@@ -210,6 +215,35 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         _isLoadingCustomer = false;
       });
     }
+  }
+
+  /// Aplica no cardápio e no carrinho os preços da tabela de preço vinculada
+  /// ao cliente (modo totem/link). Cliente sem tabela (ou com tabela vazia/
+  /// indisponível) volta a exibir os preços normais.
+  Future<void> _aplicarTabelaDePrecoDoCliente(Customer? customer) async {
+    final menuProvider = context.read<MenuProvider>();
+    final cartProvider = context.read<CartProvider>();
+    final tabelaPrecoId = customer?.tabelaPrecoId;
+
+    if (tabelaPrecoId == null) {
+      menuProvider.restaurarPrecosNormais();
+      cartProvider.restaurarPrecosNormais();
+      return;
+    }
+
+    if (menuProvider.tabelaPrecoIdAplicada == tabelaPrecoId) return;
+
+    final precos = await PriceTableService().buscarPrecos(tabelaPrecoId);
+    if (!mounted) return;
+
+    if (precos.isEmpty) {
+      menuProvider.restaurarPrecosNormais();
+      cartProvider.restaurarPrecosNormais();
+      return;
+    }
+
+    menuProvider.aplicarPrecosDaTabela(tabelaPrecoId, precos);
+    cartProvider.aplicarPrecos(precos);
   }
 
   void _selecionarEndereco(CustomerAddress? address) {

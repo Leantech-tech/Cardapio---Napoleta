@@ -14,6 +14,9 @@ class Customer {
   final DateTime? createdAt;
   final List<CustomerAddress> addresses;
 
+  /// Tabela de preço vinculada ao cliente no Minha Loja (pessoa.tabela_preco_id).
+  final int? tabelaPrecoId;
+
   const Customer({
     this.id,
     required this.nome,
@@ -27,6 +30,7 @@ class Customer {
     this.cep = '',
     this.createdAt,
     this.addresses = const [],
+    this.tabelaPrecoId,
   });
 
   factory Customer.fromMap(Map<String, dynamic> map, {List<CustomerAddress>? addresses}) {
@@ -34,6 +38,7 @@ class Customer {
       id: map['id'] as int?,
       nome: (map['nome'] ?? '').toString(),
       cpf: (map['cpf'] ?? '').toString(),
+      tabelaPrecoId: (map['tabela_preco_id'] as num?)?.toInt(),
       rua: (map['rua'] ?? '').toString(),
       numero: (map['numero'] ?? '').toString(),
       complemento: (map['complemento'] ?? '').toString(),
@@ -77,6 +82,7 @@ class Customer {
       'estado': estado.trim().toUpperCase(),
       'cep': cep.trim(),
       'created_at': createdAt?.toIso8601String(),
+      'tabela_preco_id': tabelaPrecoId,
     };
   }
 
