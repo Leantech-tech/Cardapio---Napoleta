@@ -7,12 +7,17 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tachao_menu/main.dart';
 import 'package:tachao_menu/providers/auth_provider.dart';
 import 'package:tachao_menu/providers/theme_provider.dart';
 
 void main() {
   testWidgets('App builds smoke test', (WidgetTester tester) async {
+    // SharedPreferences precisa de valores mockados no ambiente de teste;
+    // sem isso getInstance() trava o teste indefinidamente.
+    SharedPreferences.setMockInitialValues({});
+
     final authProvider = AuthProvider();
     await authProvider.loadSettings();
     final themeProvider = ThemeProvider();

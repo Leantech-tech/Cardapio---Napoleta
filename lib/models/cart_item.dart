@@ -1,3 +1,5 @@
+import 'pricing.dart';
+
 class CartItem {
   final String id;
   final String productId;
@@ -11,6 +13,19 @@ class CartItem {
   final Map<String, int> selectedOptionQuantities;
   final double optionsPrice;
 
+  /// Snapshot da origem do preço no momento da compra (PADRAO/TABELA/PROMOCAO).
+  PrecoOrigem precoOrigem;
+
+  /// Tabela de preço aplicada ao item, quando houver.
+  int? tabelaPrecoId;
+
+  /// Promoção aplicada ao item, quando houver.
+  int? promocaoId;
+  String? promocaoNome;
+
+  /// Preço padrão (vr_venda) de referência no momento da resolução.
+  double? precoPadrao;
+
   CartItem({
     required this.id,
     required this.productId,
@@ -23,6 +38,11 @@ class CartItem {
     this.selectedOptionPrices = const {},
     this.selectedOptionQuantities = const {},
     this.optionsPrice = 0.0,
+    this.precoOrigem = PrecoOrigem.padrao,
+    this.tabelaPrecoId,
+    this.promocaoId,
+    this.promocaoNome,
+    this.precoPadrao,
   });
 
   double get total => (basePrice + optionsPrice) * quantity;

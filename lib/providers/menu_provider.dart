@@ -18,11 +18,22 @@ class MenuProvider extends ChangeNotifier {
   /// Tabela de preço atualmente aplicada, ou null quando os preços são os normais.
   int? _tabelaPrecoIdAplicada;
 
+  /// Últimos preços de tabela aplicados, reutilizados após um reload do cardápio
+  /// para não voltar silenciosamente ao preço padrão quando o cliente já está
+  /// identificado (o PricingProvider reconsulta valores frescos a cada recálculo).
+  Map<int, double> _ultimosPrecosTabela = {};
+
   List<Category> get categories => _categories;
   List<Product> get products => _products;
   bool get isLoading => _isLoading;
   String? get error => _error;
   int? get tabelaPrecoIdAplicada => _tabelaPrecoIdAplicada;
+
+  /// IDs dos produtos do cardápio, para consulta de preços em lote.
+  List<int> get produtoIds => [
+        for (final p in _products)
+          if (int.tryParse(p.id) != null) int.parse(p.id),
+      ];
 
   MenuProvider() {
     loadMenu();
@@ -44,7 +55,18 @@ class MenuProvider extends ChangeNotifier {
       _precosBase
         ..clear()
         ..addAll(_mapearPrecos(_products));
-      _tabelaPrecoIdAplicada = null;
+
+      // Reaplica a tabela do cliente identificado após o reload, em vez de
+      // voltar silenciosamente aos preços normais.
+      final tabelaAnterior = _tabelaPrecoIdAplicada;
+      final precosAnteriores = _ultimosPrecosTabela;
+      if (tabelaAnterior != null && precosAnteriores.isNotEmpty) {
+        _tabelaPrecoIdAplicada = null;
+        aplicarPrecosDaTabela(tabelaAnterior, precosAnteriores);
+      } else {
+        _tabelaPrecoIdAplicada = null;
+      }
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -58,6 +80,7 @@ class MenuProvider extends ChangeNotifier {
   /// Produtos sem valor na tabela mantêm o preço normal.
   void aplicarPrecosDaTabela(int tabelaPrecoId, Map<int, double> precos) {
     _tabelaPrecoIdAplicada = tabelaPrecoId;
+    _ultimosPrecosTabela = Map.of(precos);
     _products = [
       for (final p in _products)
         precos.containsKey(int.tryParse(p.id))
@@ -71,6 +94,7 @@ class MenuProvider extends ChangeNotifier {
   void restaurarPrecosNormais() {
     if (_tabelaPrecoIdAplicada == null) return;
     _tabelaPrecoIdAplicada = null;
+    _ultimosPrecosTabela = {};
     _products = [
       for (final p in _products)
         _precosBase.containsKey(int.tryParse(p.id))

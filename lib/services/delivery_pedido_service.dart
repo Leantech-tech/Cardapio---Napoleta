@@ -80,6 +80,12 @@ class DeliveryPedidoService {
       'valor_total_item': item.total,
       'observacao': item.observation ?? '',
       'status': 'ATIVO',
+      // Snapshot da origem do preço no momento da compra.
+      'preco_origem': item.precoOrigem.wire,
+      if (item.tabelaPrecoId != null) 'tabela_preco_id': item.tabelaPrecoId,
+      if (item.promocaoId != null) 'promocao_id': item.promocaoId,
+      if (item.promocaoNome != null) 'promocao_nome': item.promocaoNome,
+      if (item.precoPadrao != null) 'preco_padrao': item.precoPadrao,
       'modifiers': _construirModificadores(item),
     };
   }

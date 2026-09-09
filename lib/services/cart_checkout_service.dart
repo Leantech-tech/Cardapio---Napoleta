@@ -9,6 +9,7 @@ import '../models/cart_item.dart';
 import '../models/order_checkout_data.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/pricing_provider.dart';
 import '../services/balcao_pedido_service.dart';
 import '../services/comanda_service.dart';
 import '../services/delivery_pedido_service.dart';
@@ -81,6 +82,7 @@ class CartCheckoutService {
       final itensPedido = List<CartItem>.from(cart.items);
       final totalPedido = cart.totalPrice;
       cart.clear();
+      context.read<PricingProvider>().finalizarPedido();
       await _mostrarDialogSucessoTotem(
         context,
         pedidoCriado: pedidoCriado,
@@ -209,6 +211,7 @@ class CartCheckoutService {
         Colors.green[600],
       );
       cart.clear();
+      context.read<PricingProvider>().finalizarPedido();
       onSuccess?.call();
     } catch (e) {
       if (!context.mounted) return;
@@ -379,6 +382,7 @@ class CartCheckoutService {
         Colors.green[600],
       );
       cart.clear();
+      context.read<PricingProvider>().finalizarPedido();
       onSuccess?.call();
     } catch (e) {
       if (!context.mounted) return;

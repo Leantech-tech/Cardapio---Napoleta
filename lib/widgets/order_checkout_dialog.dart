@@ -6,11 +6,9 @@ import '../models/customer.dart';
 import '../models/customer_address.dart';
 import '../models/order_checkout_data.dart';
 import '../models/payment_method.dart';
-import '../providers/cart_provider.dart';
-import '../providers/menu_provider.dart';
 import '../providers/payment_method_provider.dart';
+import '../providers/pricing_provider.dart';
 import '../services/customer_service.dart';
-import '../services/price_table_service.dart';
 import '../theme/app_theme.dart';
 import 'address_manager_dialog.dart';
 
@@ -179,23 +177,36 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
   Future<void> _buscarClientePorCpf() async {
     final cpfLimpo = _cpfController.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (cpfLimpo.isEmpty) return;
+
+    final pricing = context.read<PricingProvider>();
+
     if (!_cpfValido(cpfLimpo)) {
-      setState(() => _error = 'CPF incorreto');
+      // CPF inválido: limpa qualquer cliente anteriormente selecionado.
+      await pricing.atualizarCliente(null);
+      if (!mounted) return;
+      setState(() {
+        _customerLoaded = null;
+        _error = 'CPF incorreto';
+      });
       return;
     }
 
     setState(() => _isLoadingCustomer = true);
 
     try {
+      // Consulta sempre em tempo real no servidor — não usa cache local.
       final customer = await CustomerService().buscarPorCpf(cpfLimpo);
       if (!mounted) return;
 
-      await _aplicarTabelaDePrecoDoCliente(customer);
+      // Cliente não encontrado: limpa a seleção anterior e volta aos preços
+      // normais; nunca mantém silenciosamente os dados do CPF anterior.
+      await pricing.atualizarCliente(customer);
+      if (!mounted) return;
 
       setState(() {
         _customerLoaded = customer;
         _isLoadingCustomer = false;
-        _error = customer == null ? 'CPF incorreto' : null;
+        _error = customer == null ? 'Cliente não encontrado. Confirme para cadastrar.' : null;
       });
 
       if (customer != null) {
@@ -215,35 +226,6 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         _isLoadingCustomer = false;
       });
     }
-  }
-
-  /// Aplica no cardápio e no carrinho os preços da tabela de preço vinculada
-  /// ao cliente (modo totem/link). Cliente sem tabela (ou com tabela vazia/
-  /// indisponível) volta a exibir os preços normais.
-  Future<void> _aplicarTabelaDePrecoDoCliente(Customer? customer) async {
-    final menuProvider = context.read<MenuProvider>();
-    final cartProvider = context.read<CartProvider>();
-    final tabelaPrecoId = customer?.tabelaPrecoId;
-
-    if (tabelaPrecoId == null) {
-      menuProvider.restaurarPrecosNormais();
-      cartProvider.restaurarPrecosNormais();
-      return;
-    }
-
-    if (menuProvider.tabelaPrecoIdAplicada == tabelaPrecoId) return;
-
-    final precos = await PriceTableService().buscarPrecos(tabelaPrecoId);
-    if (!mounted) return;
-
-    if (precos.isEmpty) {
-      menuProvider.restaurarPrecosNormais();
-      cartProvider.restaurarPrecosNormais();
-      return;
-    }
-
-    menuProvider.aplicarPrecosDaTabela(tabelaPrecoId, precos);
-    cartProvider.aplicarPrecos(precos);
   }
 
   void _selecionarEndereco(CustomerAddress? address) {
@@ -484,6 +466,22 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
       debugPrint('OrderCheckoutDialog: customer retornado - id=${cadastrado.id}, nome=${cadastrado.nome}, enderecos=${cadastrado.addresses.length}');
 
       if (!mounted) return;
+
+      // Vincula o cliente identificado (com id/tabela do servidor) à resolução
+      // de preços e faz a última validação no servidor antes de fechar. Se o
+      // preço mudou, atualiza o carrinho e exige nova confirmação.
+      final pricing = context.read<PricingProvider>();
+      await pricing.atualizarCliente(cadastrado);
+      if (!mounted) return;
+      final validacao = await pricing.validarFechamento();
+      if (!mounted) return;
+      if (validacao == ValidacaoFechamento.precosAtualizados) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Os preços foram atualizados. Confira o total e confirme novamente.';
+        });
+        return;
+      }
 
       final valorTroco = !widget.isTotem &&
               _tipoEntrega == TipoEntrega.entrega &&
@@ -743,6 +741,7 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
           onChanged: (value) {
             final numeros = value.replaceAll(RegExp(r'[^0-9]'), '');
             if (numeros.isEmpty) {
+              context.read<PricingProvider>().atualizarCliente(null);
               setState(() {
                 _error = null;
                 _customerLoaded = null;

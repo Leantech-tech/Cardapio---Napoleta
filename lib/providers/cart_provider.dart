@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/cart_item.dart';
+import '../models/pricing.dart';
 import '../models/product.dart';
 
 class CartProvider extends ChangeNotifier {
@@ -84,24 +85,44 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Aplica os preços da tabela nos itens do carrinho.
-  /// Itens sem valor na tabela mantêm o preço normal.
-  void aplicarPrecos(Map<int, double> precos) {
+  /// Aplica no carrinho os preços resolvidos pelo servidor.
+  /// Produtos ausentes do resultado mantêm o preço base normal (PADRAO).
+  void aplicarPrecosResolvidos(PricingResult resultado) {
     for (final item in _items) {
       final produtoId = int.tryParse(item.productId);
       if (produtoId == null) continue;
-      final novoPreco = precos[produtoId] ?? _precosBase[produtoId];
-      if (novoPreco != null) item.basePrice = novoPreco;
+      final resolvido = resultado[produtoId];
+      if (resolvido != null) {
+        item.basePrice = resolvido.valor;
+        item.precoOrigem = resolvido.origem;
+        item.tabelaPrecoId = resolvido.tabelaPrecoId;
+        item.promocaoId = resolvido.promocaoId;
+        item.promocaoNome = resolvido.promocaoNome;
+        item.precoPadrao = resolvido.precoPadrao;
+      } else {
+        final base = _precosBase[produtoId];
+        if (base != null) item.basePrice = base;
+        item.precoOrigem = PrecoOrigem.padrao;
+        item.tabelaPrecoId = null;
+        item.promocaoId = null;
+        item.promocaoNome = null;
+        item.precoPadrao = base;
+      }
     }
     notifyListeners();
   }
 
-  /// Restaura o preço normal dos itens do carrinho.
+  /// Restaura o preço normal dos itens do carrinho e limpa o snapshot.
   void restaurarPrecosNormais() {
     for (final item in _items) {
       final produtoId = int.tryParse(item.productId);
       final base = produtoId != null ? _precosBase[produtoId] : null;
       if (base != null) item.basePrice = base;
+      item.precoOrigem = PrecoOrigem.padrao;
+      item.tabelaPrecoId = null;
+      item.promocaoId = null;
+      item.promocaoNome = null;
+      item.precoPadrao = base;
     }
     notifyListeners();
   }

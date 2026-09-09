@@ -8,6 +8,7 @@ import 'providers/delivery_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/menu_provider.dart';
 import 'providers/payment_method_provider.dart';
+import 'providers/pricing_provider.dart';
 import 'providers/auth_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/menu_screen.dart';
@@ -78,6 +79,12 @@ class TachaoApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: themeProvider),
         ChangeNotifierProvider(create: (_) => MenuProvider()),
         ChangeNotifierProvider(create: (_) => PaymentMethodProvider()),
+        ChangeNotifierProvider(
+          create: (ctx) => PricingProvider(
+            cart: ctx.read<CartProvider>(),
+            menu: ctx.read<MenuProvider>(),
+          ),
+        ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
