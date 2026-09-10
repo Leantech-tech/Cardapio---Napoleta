@@ -37,10 +37,7 @@ void main() async {
   // Usa credenciais fixas de "cardápio" (totem) para autenticar a sessão.
   if (!authProvider.isLoggedIn) {
     try {
-      await authProvider.login(
-        'cardapio@napoleta.com.br',
-        '@J20r91s0',
-      );
+      await authProvider.login('cardapio@napoleta.com.br', '@J20r91s0');
     } catch (e) {
       // Ignora falha de rede na inicialização; o app abre mesmo sem sessão.
       debugPrint('[AutoLogin] Falha no login silencioso: \$e');
@@ -50,12 +47,7 @@ void main() async {
   final themeProvider = ThemeProvider();
   await themeProvider.loadSettings();
 
-  runApp(
-    TachaoApp(
-      authProvider: authProvider,
-      themeProvider: themeProvider,
-    ),
-  );
+  runApp(TachaoApp(authProvider: authProvider, themeProvider: themeProvider));
 }
 
 class TachaoApp extends StatelessWidget {
@@ -80,6 +72,10 @@ class TachaoApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MenuProvider()),
         ChangeNotifierProvider(create: (_) => PaymentMethodProvider()),
         ChangeNotifierProvider(
+          // Precisa nascer junto com o app para assinar CartProvider/MenuProvider
+          // antes da primeira inclusão. O Provider é lazy por padrão e, na Web,
+          // isso fazia o primeiro recálculo acontecer somente no checkout.
+          lazy: false,
           create: (ctx) => PricingProvider(
             cart: ctx.read<CartProvider>(),
             menu: ctx.read<MenuProvider>(),
@@ -117,8 +113,8 @@ class TachaoApp extends StatelessWidget {
 class AppScrollBehavior extends MaterialScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+  };
 }

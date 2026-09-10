@@ -45,7 +45,9 @@ class CartCheckoutService {
     OrderCheckoutData? checkoutData,
   }) async {
     final authProvider = context.read<AuthProvider>();
-    debugPrint('[CartCheckoutService] sendOrder - useTotenMode=${authProvider.useTotenMode}, useComandaFeature=${authProvider.useComandaFeature}');
+    debugPrint(
+      '[CartCheckoutService] sendOrder - useTotenMode=${authProvider.useTotenMode}, useComandaFeature=${authProvider.useComandaFeature}',
+    );
 
     if (checkoutData == null) {
       if (!context.mounted) return;
@@ -205,21 +207,13 @@ class CartCheckoutService {
         ),
       );
 
-      _showSnackBar(
-        context,
-        'Pedido enviado com sucesso!',
-        Colors.green[600],
-      );
+      _showSnackBar(context, 'Pedido enviado com sucesso!', Colors.green[600]);
       cart.clear();
       context.read<PricingProvider>().finalizarPedido();
       onSuccess?.call();
     } catch (e) {
       if (!context.mounted) return;
-      _showSnackBar(
-        context,
-        'Erro ao enviar pedido: $e',
-        Colors.red[600],
-      );
+      _showSnackBar(context, 'Erro ao enviar pedido: $e', Colors.red[600]);
     }
   }
 
@@ -283,10 +277,24 @@ class CartCheckoutService {
 
     if (checkoutData != null) {
       try {
-        final deliveryPedidoId = savedOrder != null ? savedOrder['id'] as int? : null;
-        debugPrint('[CartCheckoutService] chamando PrintQueueService - deliveryPedidoId=$deliveryPedidoId');
+        final deliveryPedidoId = savedOrder != null
+            ? savedOrder['id'] as int?
+            : null;
+        debugPrint(
+          '[CartCheckoutService] chamando PrintQueueService - deliveryPedidoId=$deliveryPedidoId',
+        );
         final deliveryFee = context.read<DeliveryProvider>().deliveryFee ?? 0.0;
-        final valorTotalPedido = cart.totalPrice + deliveryFee;
+        final persistedTotal = savedOrder?['valor_total'];
+        final valorTotalPedido = persistedTotal is num
+            ? persistedTotal.toDouble()
+            : cart.totalPrice + deliveryFee;
+        final persistedItemsRaw = savedOrder?['items'];
+        final persistedItems = persistedItemsRaw is List
+            ? persistedItemsRaw
+                  .whereType<Map>()
+                  .map((item) => Map<String, dynamic>.from(item))
+                  .toList(growable: false)
+            : const <Map<String, dynamic>>[];
         await PrintQueueService().adicionarPedido(
           itens: cart.items,
           checkoutData: checkoutData,
@@ -294,8 +302,11 @@ class CartCheckoutService {
           storeAddress: authProvider.storeAddress,
           deliveryPedidoId: deliveryPedidoId,
           valorTotalPedido: valorTotalPedido,
+          itensPersistidos: persistedItems,
         );
-        debugPrint('[CartCheckoutService] PrintQueueService finalizado com sucesso');
+        debugPrint(
+          '[CartCheckoutService] PrintQueueService finalizado com sucesso',
+        );
       } catch (e) {
         debugPrint('[CartCheckoutService] erro no PrintQueueService: $e');
         if (!context.mounted) return;
@@ -357,7 +368,8 @@ class CartCheckoutService {
       }
     }
 
-    if (storeAddress.isNotEmpty && (checkoutData == null || checkoutData.isRetirada)) {
+    if (storeAddress.isNotEmpty &&
+        (checkoutData == null || checkoutData.isRetirada)) {
       buffer.writeln();
       buffer.writeln('Endereço da loja para retirada:');
       buffer.writeln(storeAddress);
@@ -365,7 +377,8 @@ class CartCheckoutService {
 
     final message = buffer.toString();
     final uri = Uri.parse(
-        'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}');
+      'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}',
+    );
 
     try {
       if (await canLaunchUrl(uri)) {
@@ -386,11 +399,7 @@ class CartCheckoutService {
       onSuccess?.call();
     } catch (e) {
       if (!context.mounted) return;
-      _showSnackBar(
-        context,
-        'Erro ao enviar pedido: $e',
-        Colors.red[600],
-      );
+      _showSnackBar(context, 'Erro ao enviar pedido: $e', Colors.red[600]);
     }
   }
 
@@ -432,7 +441,11 @@ class CartCheckoutService {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green[600], size: 32),
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.green[600],
+                      size: 32,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -566,9 +579,7 @@ class CartCheckoutService {
         ),
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
       ),
     );

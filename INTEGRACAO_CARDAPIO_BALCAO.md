@@ -528,3 +528,15 @@ Antes de uma integração pública definitiva, recomenda-se adicionar:
 | `POST` | `/api/v1/balcao/orders/{id}/status` | Sim | Marcar pronto ou cancelar |
 | `POST` | `/api/v1/balcao/orders/{id}/print` | Sim | Reimprimir |
 
+## 13. Diferença entre APK e Web
+
+No APK, o padrão é o modo Totem e o fechamento usa
+`POST /api/v1/balcao/orders`. Na Web, o padrão é o modo Link e o fechamento
+usa `POST /api/v1/delivery/orders` antes de criar a impressão antecipada.
+
+Os dois endpoints recalculam no backend a tabela ativa da pessoa e as promoções
+De/Por ou Atacado. No modo Link, os itens e o total devolvidos pelo Delivery
+são reutilizados em `fila_impressao`; o navegador não mantém um preço próprio
+como fonte de verdade. O resolvedor de preços também deve ser criado de forma
+não preguiçosa para observar o carrinho desde a primeira inclusão.
+

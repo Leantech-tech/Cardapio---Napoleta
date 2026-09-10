@@ -15,7 +15,9 @@ import 'db_client.dart';
 /// - Pedidos feitos pelo totem -> setor obrigatório 'Balcao'.
 /// - Pedidos feitos pelo link  -> setor obrigatório 'Delivery'.
 class PrintQueueService {
-  final DbClient _db = DbClient();
+  final DbClient _db;
+
+  PrintQueueService({DbClient? db}) : _db = db ?? DbClient();
 
   static const String _origemTotem = 'totem';
   static const String _origemLink = 'link';
@@ -34,13 +36,17 @@ class PrintQueueService {
     String? storeAddress,
     int? deliveryPedidoId,
     double? valorTotalPedido,
+    List<Map<String, dynamic>> itensPersistidos = const [],
   }) async {
-    debugPrint('[PrintQueueService] adicionarPedido iniciado - isTotem=$isTotem, deliveryPedidoId=$deliveryPedidoId');
+    debugPrint(
+      '[PrintQueueService] adicionarPedido iniciado - isTotem=$isTotem, deliveryPedidoId=$deliveryPedidoId',
+    );
     final empresaId = ApiConfig.empresaId;
     final origem = isTotem ? _origemTotem : _origemLink;
     final setor = isTotem ? _setorBalcao : _setorDelivery;
     final dataHora = DateTime.now().toIso8601String();
-    final totalPedido = valorTotalPedido ??
+    final totalPedido =
+        valorTotalPedido ??
         itens.fold<double>(0.0, (sum, item) => sum + item.total);
 
     final mensagem = _buildMessage(
@@ -49,8 +55,19 @@ class PrintQueueService {
       storeAddress: storeAddress,
     );
 
+    final snapshotsPersistidos = List<Map<String, dynamic>>.from(
+      itensPersistidos,
+    );
     final conteudo = <String, dynamic>{
-      'itens': itens.map((item) => _itemToJson(item)).toList(),
+      'itens': itens.map((item) {
+        final persistedIndex = snapshotsPersistidos.indexWhere(
+          (snapshot) => snapshot['produto_id']?.toString() == item.productId,
+        );
+        final persisted = persistedIndex >= 0
+            ? snapshotsPersistidos.removeAt(persistedIndex)
+            : null;
+        return _itemToJson(item, persisted: persisted);
+      }).toList(),
       'setor': setor,
       'origem': origem,
       'delivery_pedido_id': deliveryPedidoId,
@@ -64,7 +81,9 @@ class PrintQueueService {
         'forma_pagamento': checkoutData.formaPagamentoLabel,
         'pagar_na_entrega': checkoutData.isEntrega,
         'troco': checkoutData.precisaTroco,
-        'valor_troco': checkoutData.precisaTroco ? checkoutData.valorTroco : 0.0,
+        'valor_troco': checkoutData.precisaTroco
+            ? checkoutData.valorTroco
+            : 0.0,
       },
       'mensagem': mensagem,
       'criado_em': dataHora,
@@ -83,18 +102,33 @@ class PrintQueueService {
       'valor_total_pedido': totalPedido,
     };
 
-    debugPrint('[PrintQueueService] inserindo na fila: empresa=$empresaId, setor=$setor, delivery_pedido_id=$deliveryPedidoId');
+    debugPrint(
+      '[PrintQueueService] inserindo na fila: empresa=$empresaId, setor=$setor, delivery_pedido_id=$deliveryPedidoId',
+    );
     final response = await _db.insert('fila_impressao', {
       'empresa_id': empresaId,
       'setor': setor,
       'conteudo': conteudo,
       'impresso': false,
     });
-    debugPrint('[PrintQueueService] fila_impressao inserida - response=$response');
+    debugPrint(
+      '[PrintQueueService] fila_impressao inserida - response=$response',
+    );
   }
 
-  Map<String, dynamic> _itemToJson(CartItem item) {
+  Map<String, dynamic> _itemToJson(
+    CartItem item, {
+    Map<String, dynamic>? persisted,
+  }) {
     final observacao = item.observation?.trim();
+    final persistedUnit = persisted?['valor_unitario'];
+    final persistedTotal = persisted?['valor_total_item'];
+    final unitPrice = persistedUnit is num
+        ? persistedUnit.toDouble()
+        : item.unitPrice;
+    final total = persistedTotal is num
+        ? persistedTotal.toDouble()
+        : item.total;
     return {
       'id': item.id,
       'produto': item.name,
@@ -108,11 +142,15 @@ class PrintQueueService {
           };
         });
       }).toList(),
-      'observacao': observacao != null && observacao.isNotEmpty ? observacao : null,
+      'observacao': observacao != null && observacao.isNotEmpty
+          ? observacao
+          : null,
       'produto_id': item.productId,
       'quantidade': item.quantity,
-      'valor_total': item.total,
-      'valor_unitario': item.unitPrice,
+      // No modo Link, prefere o snapshot devolvido pelo Delivery. Assim a fila
+      // nunca diverge do preço autoritativo (tabela/promoção) gravado no pedido.
+      'valor_total': total,
+      'valor_unitario': unitPrice,
       'is_fracionada': false,
       'modificadores': _buildModificadores(item),
     };
@@ -150,7 +188,8 @@ class PrintQueueService {
 
     buffer.writeln();
     buffer.writeln(
-        'Total de itens: ${itens.fold<int>(0, (sum, item) => sum + item.quantity)}');
+      'Total de itens: ${itens.fold<int>(0, (sum, item) => sum + item.quantity)}',
+    );
 
     buffer.writeln();
     buffer.writeln('Tipo: ${checkoutData.tipoEntregaLabel}');
