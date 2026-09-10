@@ -27,7 +27,12 @@ class _FakePricingService extends PricingService {
   }
 }
 
-PricingResult resultado(int produtoId, double valor, {PrecoOrigem origem = PrecoOrigem.padrao, int? tabelaPrecoId}) {
+PricingResult resultado(
+  int produtoId,
+  double valor, {
+  PrecoOrigem origem = PrecoOrigem.padrao,
+  int? tabelaPrecoId,
+}) {
   return PricingResult({
     produtoId: PrecoResolvido(
       produtoId: produtoId,
@@ -39,33 +44,38 @@ PricingResult resultado(int produtoId, double valor, {PrecoOrigem origem = Preco
 }
 
 Product produto(int id, double preco) => Product(
-      id: '$id',
-      name: 'Produto $id',
-      description: '',
-      price: preco,
-      imagePath: '',
-      categoryId: '1',
-    );
+  id: '$id',
+  name: 'Produto $id',
+  description: '',
+  price: preco,
+  imagePath: '',
+  categoryId: '1',
+);
 
 void main() {
   group('PricingProvider', () {
-    test('recalcular aplica preços resolvidos no carrinho com snapshot', () async {
-      final cart = CartProvider();
-      cart.addItem(produto(10, 20.0), 2, null, {}, {}, 0.0);
+    test(
+      'recalcular aplica preços resolvidos no carrinho com snapshot',
+      () async {
+        final cart = CartProvider();
+        cart.addItem(produto(10, 20.0), 2, null, {}, {}, 0.0);
 
-      final fake = _FakePricingService()
-        ..scripted.add(resultado(10, 15.0, origem: PrecoOrigem.tabela, tabelaPrecoId: 3));
-      final provider = PricingProvider(cart: cart, service: fake);
+        final fake = _FakePricingService()
+          ..scripted.add(
+            resultado(10, 15.0, origem: PrecoOrigem.tabela, tabelaPrecoId: 3),
+          );
+        final provider = PricingProvider(cart: cart, service: fake);
 
-      await provider.recalcular();
+        await provider.recalcular();
 
-      final item = cart.items.single;
-      expect(item.basePrice, 15.0);
-      expect(item.precoOrigem, PrecoOrigem.tabela);
-      expect(item.tabelaPrecoId, 3);
-      expect(item.precoPadrao, isNull);
-      provider.dispose();
-    });
+        final item = cart.items.single;
+        expect(item.basePrice, 15.0);
+        expect(item.precoOrigem, PrecoOrigem.tabela);
+        expect(item.tabelaPrecoId, 3);
+        expect(item.precoPadrao, isNull);
+        provider.dispose();
+      },
+    );
 
     test('produto ausente do resultado mantém o preço base (PADRAO)', () async {
       final cart = CartProvider();
@@ -82,99 +92,173 @@ void main() {
       provider.dispose();
     });
 
-    test('atualizarCliente envia pessoa_id e remover cliente restaura preços normais', () async {
+    test(
+      'atualizarCliente envia pessoa_id e remover cliente restaura preços normais',
+      () async {
+        final cart = CartProvider();
+        cart.addItem(produto(10, 20.0), 1, null, {}, {}, 0.0);
+
+        final fake = _FakePricingService()
+          ..scripted.add(
+            resultado(10, 15.0, origem: PrecoOrigem.tabela, tabelaPrecoId: 3),
+          )
+          ..scripted.add(const PricingResult({}));
+        final provider = PricingProvider(cart: cart, service: fake);
+
+        await provider.atualizarCliente(
+          const Customer(id: 123, nome: 'Cliente Teste', cpf: '31547485809'),
+        );
+        expect(fake.pessoaIds.last, 123);
+        expect(cart.items.single.basePrice, 15.0);
+
+        await provider.atualizarCliente(null);
+        expect(fake.pessoaIds.last, isNull);
+        final item = cart.items.single;
+        expect(item.basePrice, 20.0);
+        expect(item.precoOrigem, PrecoOrigem.padrao);
+        expect(item.tabelaPrecoId, isNull);
+        provider.dispose();
+      },
+    );
+
+    test(
+      'validarFechamento retorna ok quando o servidor confere o preço',
+      () async {
+        final cart = CartProvider();
+        cart.addItem(produto(10, 20.0), 2, null, {}, {}, 0.0);
+
+        final fake = _FakePricingService()..scripted.add(resultado(10, 20.0));
+        final provider = PricingProvider(cart: cart, service: fake);
+
+        final validacao = await provider.validarFechamento();
+        expect(validacao, ValidacaoFechamento.ok);
+        expect(cart.totalPrice, 40.0);
+        provider.dispose();
+      },
+    );
+
+    test(
+      'validarFechamento detecta divergência e atualiza o carrinho',
+      () async {
+        final cart = CartProvider();
+        cart.addItem(produto(10, 20.0), 2, null, {}, {}, 0.0);
+
+        final fake = _FakePricingService()..scripted.add(resultado(10, 18.0));
+        final provider = PricingProvider(cart: cart, service: fake);
+
+        final validacao = await provider.validarFechamento();
+        expect(validacao, ValidacaoFechamento.precosAtualizados);
+        expect(cart.items.single.basePrice, 18.0);
+        expect(cart.totalPrice, 36.0);
+        provider.dispose();
+      },
+    );
+
+    test('recalcular aplica promoção retornada pelo servidor', () async {
       final cart = CartProvider();
       cart.addItem(produto(10, 20.0), 1, null, {}, {}, 0.0);
 
       final fake = _FakePricingService()
-        ..scripted.add(resultado(10, 15.0, origem: PrecoOrigem.tabela, tabelaPrecoId: 3))
-        ..scripted.add(const PricingResult({}));
+        ..scripted.add(
+          const PricingResult({
+            10: PrecoResolvido(
+              produtoId: 10,
+              valor: 15,
+              origem: PrecoOrigem.promocao,
+              precoPadrao: 20,
+              promocaoId: 5,
+              promocaoNome: 'Oferta',
+              promocaoTipo: 'DE_POR',
+            ),
+          }),
+        );
       final provider = PricingProvider(cart: cart, service: fake);
 
-      await provider.atualizarCliente(
-        const Customer(id: 123, nome: 'Cliente Teste', cpf: '31547485809'),
-      );
-      expect(fake.pessoaIds.last, 123);
-      expect(cart.items.single.basePrice, 15.0);
+      await provider.recalcular();
 
-      await provider.atualizarCliente(null);
-      expect(fake.pessoaIds.last, isNull);
       final item = cart.items.single;
-      expect(item.basePrice, 20.0);
-      expect(item.precoOrigem, PrecoOrigem.padrao);
-      expect(item.tabelaPrecoId, isNull);
+      expect(item.basePrice, 15);
+      expect(item.precoOrigem, PrecoOrigem.promocao);
+      expect(item.promocaoId, 5);
       provider.dispose();
     });
 
-    test('validarFechamento retorna ok quando o servidor confere o preço', () async {
-      final cart = CartProvider();
-      cart.addItem(produto(10, 20.0), 2, null, {}, {}, 0.0);
+    test(
+      'preserva linhas do mesmo produto para calcular Atacado e adicionais',
+      () async {
+        final cart = CartProvider();
+        cart.addItem(produto(10, 20.0), 2, 'Sem gelo', {}, {}, 1.0);
+        cart.addItem(produto(10, 20.0), 1, 'Com gelo', {}, {}, 3.0);
 
-      final fake = _FakePricingService()..scripted.add(resultado(10, 20.0));
-      final provider = PricingProvider(cart: cart, service: fake);
+        final fake = _FakePricingService()
+          ..scripted.add(const PricingResult({}));
+        final provider = PricingProvider(cart: cart, service: fake);
 
-      final validacao = await provider.validarFechamento();
-      expect(validacao, ValidacaoFechamento.ok);
-      expect(cart.totalPrice, 40.0);
-      provider.dispose();
-    });
+        await provider.recalcular();
 
-    test('validarFechamento detecta divergência e atualiza o carrinho', () async {
-      final cart = CartProvider();
-      cart.addItem(produto(10, 20.0), 2, null, {}, {}, 0.0);
+        final consulta = fake.consultas.single;
+        expect(consulta, hasLength(2));
+        expect(consulta.map((item) => item.quantidade), [2, 1]);
+        expect(consulta.map((item) => item.valorAdicional), [1.0, 3.0]);
+        provider.dispose();
+      },
+    );
 
-      final fake = _FakePricingService()..scripted.add(resultado(10, 18.0));
-      final provider = PricingProvider(cart: cart, service: fake);
+    test(
+      'resposta atrasada de uma consulta anterior não sobrescreve o preço',
+      () async {
+        final cart = CartProvider();
+        cart.addItem(produto(10, 20.0), 1, null, {}, {}, 0.0);
 
-      final validacao = await provider.validarFechamento();
-      expect(validacao, ValidacaoFechamento.precosAtualizados);
-      expect(cart.items.single.basePrice, 18.0);
-      expect(cart.totalPrice, 36.0);
-      provider.dispose();
-    });
+        final fake = _FakePricingService();
+        final c1 = Completer<PricingResult>();
+        final c2 = Completer<PricingResult>();
+        fake.pending.addAll([c1, c2]);
+        final provider = PricingProvider(cart: cart, service: fake);
 
-    test('resposta atrasada de uma consulta anterior não sobrescreve o preço', () async {
-      final cart = CartProvider();
-      cart.addItem(produto(10, 20.0), 1, null, {}, {}, 0.0);
+        final f1 = provider.recalcular();
+        final f2 = provider.recalcular();
 
-      final fake = _FakePricingService();
-      final c1 = Completer<PricingResult>();
-      final c2 = Completer<PricingResult>();
-      fake.pending.addAll([c1, c2]);
-      final provider = PricingProvider(cart: cart, service: fake);
+        // A consulta mais recente responde primeiro; a antiga não pode vencer.
+        c2.complete(resultado(10, 12.0));
+        await f2;
+        c1.complete(resultado(10, 99.0));
+        await f1;
 
-      final f1 = provider.recalcular();
-      final f2 = provider.recalcular();
+        expect(cart.items.single.basePrice, 12.0);
+        provider.dispose();
+      },
+    );
 
-      // A consulta mais recente responde primeiro; a antiga não pode vencer.
-      c2.complete(resultado(10, 12.0));
-      await f2;
-      c1.complete(resultado(10, 99.0));
-      await f1;
+    test(
+      'finalizarPedido limpa o cliente e restaura os preços normais',
+      () async {
+        final cart = CartProvider();
+        cart.addItem(produto(10, 20.0), 1, null, {}, {}, 0.0);
 
-      expect(cart.items.single.basePrice, 12.0);
-      provider.dispose();
-    });
+        final fake = _FakePricingService()
+          ..scripted.add(
+            resultado(
+              10,
+              15.0,
+              origem: PrecoOrigem.promocao,
+              tabelaPrecoId: null,
+            ),
+          );
+        final provider = PricingProvider(cart: cart, service: fake);
 
-    test('finalizarPedido limpa o cliente e restaura os preços normais', () async {
-      final cart = CartProvider();
-      cart.addItem(produto(10, 20.0), 1, null, {}, {}, 0.0);
+        await provider.atualizarCliente(
+          const Customer(id: 7, nome: 'Cliente', cpf: '31547485809'),
+        );
+        expect(cart.items.single.basePrice, 15.0);
 
-      final fake = _FakePricingService()
-        ..scripted.add(resultado(10, 15.0, origem: PrecoOrigem.promocao, tabelaPrecoId: null));
-      final provider = PricingProvider(cart: cart, service: fake);
-
-      await provider.atualizarCliente(
-        const Customer(id: 7, nome: 'Cliente', cpf: '31547485809'),
-      );
-      expect(cart.items.single.basePrice, 15.0);
-
-      provider.finalizarPedido();
-      expect(provider.cliente, isNull);
-      final item = cart.items.single;
-      expect(item.basePrice, 20.0);
-      expect(item.precoOrigem, PrecoOrigem.padrao);
-      provider.dispose();
-    });
+        provider.finalizarPedido();
+        expect(provider.cliente, isNull);
+        final item = cart.items.single;
+        expect(item.basePrice, 20.0);
+        expect(item.precoOrigem, PrecoOrigem.padrao);
+        provider.dispose();
+      },
+    );
   });
 }

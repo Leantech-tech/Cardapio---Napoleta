@@ -6,10 +6,10 @@ enum PrecoOrigem {
 
   /// Nome usado nos payloads e no snapshot do pedido.
   String get wire => switch (this) {
-        PrecoOrigem.padrao => 'PADRAO',
-        PrecoOrigem.tabela => 'TABELA',
-        PrecoOrigem.promocao => 'PROMOCAO',
-      };
+    PrecoOrigem.padrao => 'PADRAO',
+    PrecoOrigem.tabela => 'TABELA',
+    PrecoOrigem.promocao => 'PROMOCAO',
+  };
 
   static PrecoOrigem parse(Object? valor) {
     final texto = valor?.toString().trim().toUpperCase() ?? '';
@@ -77,10 +77,10 @@ class PricingResult {
 
   /// Preços de origem TABELA por produto (para aplicar no cardápio/menu).
   Map<int, double> get precosDeTabela => {
-        for (final entry in precos.entries)
-          if (entry.value.origem == PrecoOrigem.tabela)
-            entry.key: entry.value.valor,
-      };
+    for (final entry in precos.entries)
+      if (entry.value.origem == PrecoOrigem.tabela)
+        entry.key: entry.value.valor,
+  };
 
   /// Parser tolerante da resposta do servidor. Aceita variações comuns de
   /// formato; quando nada é reconhecido, registra o payload via [onUnparsed].
@@ -121,39 +121,51 @@ class PricingResult {
         precos[produtoId] = PrecoResolvido(
           produtoId: produtoId,
           valor: valor,
-          origem: PrecoOrigem.parse(_valorDe(raw, [
-            'origem',
-            'preco_origem',
-            'origem_preco',
-            'price_origin',
-          ])),
+          origem: PrecoOrigem.parse(
+            _valorDe(raw, [
+              'origem',
+              'preco_origem',
+              'origem_preco',
+              'price_origin',
+            ]),
+          ),
           precoPadrao: _doubleDe(raw, [
             'preco_padrao',
             'vr_venda',
             'valor_padrao',
             'precoPadrao',
           ]),
-          tabelaPrecoId: _intDe(raw, [
-                'tabela_preco_id',
-                'tabelaPrecoId',
-              ]) ??
+          tabelaPrecoId:
+              _intDe(raw, ['tabela_preco_id', 'tabelaPrecoId']) ??
               _intDe(
-                raw['tabela'] is Map<String, dynamic> ? raw['tabela'] as Map<String, dynamic> : const {},
+                raw['tabela'] is Map<String, dynamic>
+                    ? raw['tabela'] as Map<String, dynamic>
+                    : const {},
                 ['id'],
               ),
-          tabelaNome: _textoDe(raw, ['tabela_nome', 'tabelaPrecoNome']) ??
+          tabelaNome:
+              _textoDe(raw, ['tabela_nome', 'tabelaPrecoNome']) ??
               _textoDe(
-                raw['tabela'] is Map<String, dynamic> ? raw['tabela'] as Map<String, dynamic> : const {},
+                raw['tabela'] is Map<String, dynamic>
+                    ? raw['tabela'] as Map<String, dynamic>
+                    : const {},
                 ['nome'],
               ),
-          promocaoId: _intDe(raw, ['promocao_id', 'promocaoId']) ??
+          promocaoId:
+              _intDe(raw, ['promocao_id', 'promocaoId']) ??
               _intDe(promocaoMap ?? const {}, ['id']),
-          promocaoNome: _textoDe(raw, ['promocao_nome']) ??
+          promocaoNome:
+              _textoDe(raw, ['promocao_nome']) ??
               _textoDe(promocaoMap ?? const {}, ['nome']),
-          promocaoTipo: _textoDe(raw, ['promocao_tipo']) ??
+          promocaoTipo:
+              _textoDe(raw, ['promocao_tipo']) ??
               _textoDe(promocaoMap ?? const {}, ['tipo']),
-          promocaoQtdMinima: _intDe(raw, ['promocao_qtd_minima']) ??
-              _intDe(promocaoMap ?? const {}, ['quantidade_minima', 'qtd_minima']),
+          promocaoQtdMinima:
+              _intDe(raw, ['promocao_qtd_minima']) ??
+              _intDe(promocaoMap ?? const {}, [
+                'quantidade_minima',
+                'qtd_minima',
+              ]),
         );
       }
     }
@@ -166,7 +178,8 @@ class PricingResult {
     final tabelaMap = root['tabela'] is Map<String, dynamic>
         ? root['tabela'] as Map<String, dynamic>
         : const <String, dynamic>{};
-    var tabelaId = _intDe(root, ['tabela_id', 'tabelaPrecoId']) ??
+    var tabelaId =
+        _intDe(root, ['tabela_id', 'tabelaPrecoId']) ??
         _intDe(tabelaMap, ['id']);
     tabelaId ??= () {
       for (final preco in precos.values) {
@@ -176,12 +189,56 @@ class PricingResult {
       }
       return null;
     }();
-    final tabelaNome = _textoDe(root, ['tabela_nome']) ??
+    final tabelaNome =
+        _textoDe(root, ['tabela_nome']) ??
         _textoDe(tabelaMap, ['nome']) ??
         (tabelaId != null ? _textoDe(root, ['nome']) : null);
-    final ativa = root['ativa'] as bool? ??
+    final ativa =
+        root['ativa'] as bool? ??
         root['tabela_ativa'] as bool? ??
         (tabelaId != null);
+
+    // O contrato real de /sales/prices devolve os preços-base em `prices` e
+    // as promoções aplicáveis em uma lista separada. A promoção só substitui
+    // a base quando for estritamente menor, como no PDV do Minha Loja.
+    final listaPromocoes = _primeiraLista(root, ['promotions', 'promocoes']);
+    if (listaPromocoes != null) {
+      for (final raw in listaPromocoes) {
+        if (raw is! Map<String, dynamic>) continue;
+        final produtoId = _intDe(raw, ['produto_id', 'produtoId']);
+        final valorPromocional = _doubleDe(raw, [
+          'valor_promocional',
+          'valorPromocional',
+          'valor',
+          'preco',
+        ]);
+        if (produtoId == null || valorPromocional == null) continue;
+
+        final base = precos[produtoId];
+        if (base == null || valorPromocional + 0.0001 >= base.valor) continue;
+
+        precos[produtoId] = PrecoResolvido(
+          produtoId: produtoId,
+          valor: valorPromocional,
+          origem: PrecoOrigem.promocao,
+          precoPadrao: base.precoPadrao,
+          tabelaPrecoId:
+              base.tabelaPrecoId ??
+              (base.origem == PrecoOrigem.tabela ? tabelaId : null),
+          tabelaNome:
+              base.tabelaNome ??
+              (base.origem == PrecoOrigem.tabela ? tabelaNome : null),
+          promocaoId: _intDe(raw, ['id', 'promocao_id', 'promocaoId']),
+          promocaoNome: _textoDe(raw, ['nome', 'promocao_nome']),
+          promocaoTipo: _textoDe(raw, ['tipo', 'promocao_tipo']),
+          promocaoQtdMinima: _intDe(raw, [
+            'quantidade_minima',
+            'qtd_minima',
+            'promocao_qtd_minima',
+          ]),
+        );
+      }
+    }
 
     return PricingResult(
       precos,
@@ -192,7 +249,10 @@ class PricingResult {
     );
   }
 
-  static List<dynamic>? _primeiraLista(Map<String, dynamic> map, List<String> chaves) {
+  static List<dynamic>? _primeiraLista(
+    Map<String, dynamic> map,
+    List<String> chaves,
+  ) {
     for (final chave in chaves) {
       final valor = map[chave];
       if (valor is List) return valor;

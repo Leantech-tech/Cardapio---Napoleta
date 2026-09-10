@@ -59,17 +59,20 @@ void main() {
       expect(result.precosDeTabela, {20: 15.0});
     });
 
-    test('aceita chaves alternativas (prices, valor_unitario, preco_origem)', () {
-      final result = PricingResult.fromJson({
-        'prices': [
-          {'produtoId': 7, 'preco': '12,50', 'preco_origem': 'PADRAO'},
-        ],
-      });
+    test(
+      'aceita chaves alternativas (prices, valor_unitario, preco_origem)',
+      () {
+        final result = PricingResult.fromJson({
+          'prices': [
+            {'produtoId': 7, 'preco': '12,50', 'preco_origem': 'PADRAO'},
+          ],
+        });
 
-      final resolvido = result[7]!;
-      expect(resolvido.valor, 12.5);
-      expect(resolvido.origem, PrecoOrigem.padrao);
-    });
+        final resolvido = result[7]!;
+        expect(resolvido.valor, 12.5);
+        expect(resolvido.origem, PrecoOrigem.padrao);
+      },
+    );
 
     test('aceita promoção em campos planos (promocao_id/promocao_nome)', () {
       final result = PricingResult.fromJson({
@@ -102,8 +105,18 @@ void main() {
           'revisao': 2,
           'ativa': true,
           'prices': [
-            {'produto_id': 8241, 'preco_padrao': 189, 'valor': 150, 'origem': 'TABELA'},
-            {'produto_id': 8249, 'preco_padrao': 20, 'valor': 20, 'origem': 'PADRAO'},
+            {
+              'produto_id': 8241,
+              'preco_padrao': 189,
+              'valor': 150,
+              'origem': 'TABELA',
+            },
+            {
+              'produto_id': 8249,
+              'preco_padrao': 20,
+              'valor': 20,
+              'origem': 'PADRAO',
+            },
           ],
         },
       });
@@ -116,6 +129,84 @@ void main() {
       expect(result[8249]?.origem, PrecoOrigem.padrao);
     });
 
+    test('aplica promoções De/Por e Atacado do formato real do servidor', () {
+      final result = PricingResult.fromJson({
+        'data': {
+          'tabela_id': 6,
+          'nome': 'Clientes especiais',
+          'ativa': true,
+          'prices': [
+            {
+              'produto_id': 10,
+              'preco_padrao': 20,
+              'valor': 18,
+              'origem': 'TABELA',
+            },
+            {
+              'produto_id': 20,
+              'preco_padrao': 12,
+              'valor': 12,
+              'origem': 'PADRAO',
+            },
+          ],
+          'promotions': [
+            {
+              'produto_id': 10,
+              'id': 101,
+              'nome': 'Oferta do dia',
+              'tipo': 'DE_POR',
+              'valor_promocional': 15,
+            },
+            {
+              'produto_id': 20,
+              'id': 202,
+              'nome': 'Leve 3',
+              'tipo': 'ATACADO',
+              'valor_promocional': 9,
+              'quantidade_minima': 3,
+            },
+          ],
+        },
+      });
+
+      expect(result[10]?.valor, 15);
+      expect(result[10]?.origem, PrecoOrigem.promocao);
+      expect(result[10]?.promocaoTipo, 'DE_POR');
+      expect(result[10]?.tabelaPrecoId, 6);
+      expect(result[20]?.valor, 9);
+      expect(result[20]?.origem, PrecoOrigem.promocao);
+      expect(result[20]?.promocaoTipo, 'ATACADO');
+      expect(result[20]?.promocaoQtdMinima, 3);
+    });
+
+    test('promoção mais cara não aumenta preço de tabela menor', () {
+      final result = PricingResult.fromJson({
+        'data': {
+          'tabela_id': 6,
+          'ativa': true,
+          'prices': [
+            {
+              'produto_id': 10,
+              'preco_padrao': 20,
+              'valor': 12,
+              'origem': 'TABELA',
+            },
+          ],
+          'promotions': [
+            {
+              'produto_id': 10,
+              'id': 101,
+              'tipo': 'DE_POR',
+              'valor_promocional': 15,
+            },
+          ],
+        },
+      });
+
+      expect(result[10]?.valor, 12);
+      expect(result[10]?.origem, PrecoOrigem.tabela);
+    });
+
     test('tabela inativa na raiz não deve ser aplicada', () {
       final result = PricingResult.fromJson({
         'data': {
@@ -124,7 +215,12 @@ void main() {
           'revisao': 2,
           'ativa': false,
           'prices': [
-            {'produto_id': 8241, 'preco_padrao': 189, 'valor': 189, 'origem': 'PADRAO'},
+            {
+              'produto_id': 8241,
+              'preco_padrao': 189,
+              'valor': 189,
+              'origem': 'PADRAO',
+            },
           ],
         },
       });
@@ -133,16 +229,18 @@ void main() {
       expect(result.precosDeTabela, isEmpty);
     });
 
-    test('payload sem itens reconhecíveis retorna vazio e chama onUnparsed', () {
-      var chamou = false;
-      final result = PricingResult.fromJson(
-        {'data': {'total': 100}},
-        onUnparsed: (_) => chamou = true,
-      );
+    test(
+      'payload sem itens reconhecíveis retorna vazio e chama onUnparsed',
+      () {
+        var chamou = false;
+        final result = PricingResult.fromJson({
+          'data': {'total': 100},
+        }, onUnparsed: (_) => chamou = true);
 
-      expect(result.precos, isEmpty);
-      expect(chamou, isTrue);
-    });
+        expect(result.precos, isEmpty);
+        expect(chamou, isTrue);
+      },
+    );
 
     test('ignora itens sem produto_id ou valor', () {
       final result = PricingResult.fromJson({

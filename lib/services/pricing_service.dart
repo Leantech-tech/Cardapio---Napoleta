@@ -12,18 +12,23 @@ class PricingItemRequest {
   final int produtoId;
   final int quantidade;
   final double valorAdicional;
+  final bool aplicaPromocao;
 
   const PricingItemRequest({
     required this.produtoId,
     required this.quantidade,
     this.valorAdicional = 0,
+    this.aplicaPromocao = true,
   });
 
-  Map<String, dynamic> toJson() => {
-        'produto_id': produtoId,
-        'quantidade': quantidade,
-        'valor_adicional': valorAdicional,
-      };
+  Map<String, dynamic> toJson() {
+    return {
+      'produto_id': produtoId,
+      'quantidade': quantidade,
+      'valor_adicional': valorAdicional,
+      'aplica_promocao': aplicaPromocao,
+    };
+  }
 }
 
 /// Serviço de resolução de preços do Cardápio.
@@ -44,34 +49,22 @@ class PricingService {
   /// Resolve em lote os preços dos itens informados. [pessoaId] é opcional:
   /// promoções são avaliadas mesmo sem cliente identificado.
   ///
-  /// As quantidades são somadas por produto antes do envio, para que o servidor
-  /// avalie corretamente a quantidade mínima de Atacado no carrinho inteiro.
+  /// As linhas são preservadas no envio. O servidor soma as quantidades por
+  /// produto para avaliar Atacado e usa o adicional de cada linha ao verificar
+  /// eventual valor mínimo da promoção.
   Future<PricingResult> resolverPrecos({
     required List<PricingItemRequest> items,
     int? pessoaId,
   }) async {
-    final agrupados = <int, ({int quantidade, double valorAdicional})>{};
-    for (final item in items) {
-      final atual = agrupados[item.produtoId];
-      agrupados[item.produtoId] = (
-        quantidade: (atual?.quantidade ?? 0) + item.quantidade,
-        valorAdicional: item.valorAdicional,
-      );
-    }
-
-    if (agrupados.isEmpty) return const PricingResult({});
+    final itensValidos = items
+        .where((item) => item.produtoId > 0 && item.quantidade > 0)
+        .toList(growable: false);
+    if (itensValidos.isEmpty) return const PricingResult({});
 
     final payload = <String, dynamic>{
       'empresa_id': ApiConfig.empresaId,
       'pessoa_id': ?pessoaId,
-      'items': [
-        for (final entry in agrupados.entries)
-          PricingItemRequest(
-            produtoId: entry.key,
-            quantidade: entry.value.quantidade,
-            valorAdicional: entry.value.valorAdicional,
-          ).toJson(),
-      ],
+      'items': itensValidos.map((item) => item.toJson()).toList(),
     };
 
     final uri = _api.buildUri('/api/v1/sales/prices');

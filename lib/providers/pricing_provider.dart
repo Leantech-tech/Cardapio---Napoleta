@@ -54,9 +54,9 @@ class PricingProvider extends ChangeNotifier {
     required CartProvider cart,
     MenuProvider? menu,
     PricingService? service,
-  })  : _cart = cart,
-        _menu = menu,
-        _service = service ?? PricingService() {
+  }) : _cart = cart,
+       _menu = menu,
+       _service = service ?? PricingService() {
     _cart.addListener(_onCartChanged);
     _menu?.addListener(_onMenuChanged);
   }
@@ -85,27 +85,40 @@ class PricingProvider extends ChangeNotifier {
   /// tabela no menu) mais as quantidades do carrinho (para o Atacado avaliar a
   /// quantidade acumulada de cada produto).
   List<PricingItemRequest> _montarItensConsulta() {
-    final itens = <int, PricingItemRequest>{};
+    final itens = <PricingItemRequest>[];
+    final produtosNoCarrinho = <int>{};
+
+    // Mantém cada linha para o servidor considerar corretamente seus
+    // adicionais no valor mínimo, somando por produto apenas para Atacado.
+    for (final item in _cart.items) {
+      final produtoId = int.tryParse(item.productId);
+      if (produtoId == null) continue;
+      produtosNoCarrinho.add(produtoId);
+      itens.add(
+        PricingItemRequest(
+          produtoId: produtoId,
+          quantidade: item.quantity,
+          valorAdicional: item.optionsPrice,
+        ),
+      );
+    }
 
     final menu = _menu;
     if (menu != null) {
       for (final id in menu.produtoIds) {
-        itens[id] = PricingItemRequest(produtoId: id, quantidade: 1);
+        // A unidade usada para consultar/exibir o menu não pode ser somada à
+        // quantidade real do carrinho, pois anteciparia promoções Atacado.
+        if (!produtosNoCarrinho.contains(id)) {
+          itens.add(PricingItemRequest(
+            produtoId: id,
+            quantidade: 1,
+            aplicaPromocao: false,
+          ));
+        }
       }
     }
 
-    for (final item in _cart.items) {
-      final produtoId = int.tryParse(item.productId);
-      if (produtoId == null) continue;
-      final atual = itens[produtoId];
-      itens[produtoId] = PricingItemRequest(
-        produtoId: produtoId,
-        quantidade: (atual?.quantidade ?? 0) + item.quantity,
-        valorAdicional: item.optionsPrice,
-      );
-    }
-
-    return itens.values.toList();
+    return itens;
   }
 
   /// Cliente identificado, trocado ou removido (null). Sempre recalcula em

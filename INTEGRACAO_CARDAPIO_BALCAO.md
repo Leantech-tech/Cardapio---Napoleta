@@ -14,7 +14,8 @@ Ao criar o pedido pela API, o Minha Loja executa tudo em uma única transação:
 1. gera o número do pedido;
 2. cria o pedido com status `EM_PREPARO`;
 3. valida e grava os itens e modificadores;
-4. calcula preços e totais usando o cadastro atual do Minha Loja;
+4. calcula preços e totais no Minha Loja, aplicando a tabela ativa da pessoa,
+   promoções vigentes e o preço padrão conforme a menor base elegível;
 5. registra o histórico da criação;
 6. separa os itens por setor;
 7. insere os comandos correspondentes em `fila_impressao`.
@@ -207,7 +208,7 @@ Payload:
 | Campo | Obrigatório | Descrição |
 | --- | --- | --- |
 | `empresa_id` | Sim | Empresa do Minha Loja |
-| `pessoa_id` | Não | Cliente já cadastrado no Minha Loja |
+| `pessoa_id` | Não | Cliente já cadastrado; sua tabela de preços ativa será aplicada pelo Minha Loja |
 | `cliente_nome` | Não | Nome ou identificação para chamar o cliente |
 | `observacao` | Não | Observação geral do pedido |
 | `usuario_id` | Não | Identificador do usuário de integração |
@@ -242,7 +243,14 @@ O Cardápio não deve enviar como fonte de verdade:
 - número do pedido.
 
 O Minha Loja consulta o produto e os modificadores, valida a empresa e calcula
-os valores no servidor.
+os valores no servidor. Quando `pessoa_id` possui uma tabela ativa, o preço da
+tabela é gravado em `balcao_pedido_item.valor_unitario`; produto ausente na
+tabela, tabela inativa ou pedido sem pessoa usam `produto.vr_venda`.
+
+Depois de resolver essa base, o servidor verifica promoções vigentes. **De/Por**
+vale desde a primeira unidade e **Atacado** soma todas as linhas do mesmo
+produto. A promoção só substitui a base quando for menor, preserva adicionais e
+alimenta tanto o total do pedido quanto o snapshot da `fila_impressao`.
 
 ### 5.5 Resposta de sucesso
 
