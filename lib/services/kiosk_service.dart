@@ -22,10 +22,9 @@ class KioskService {
       log('[KioskService] Erro ao ativar wakelock: $e', stackTrace: stackTrace);
     }
 
-    // Fixa a orientação em landscape (modo paisagem), ideal para tablets na mesa.
+    // Fixa a orientação em portrait (modo retrato), ideal para o totem em pé.
     await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
+      DeviceOrientation.portraitUp,
     ]);
 
     // Ativa o modo imersivo: esconde status bar e navigation bar.

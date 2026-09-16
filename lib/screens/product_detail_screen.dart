@@ -19,8 +19,7 @@ class ProductDetailScreen extends StatefulWidget {
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen>
-    with SingleTickerProviderStateMixin {
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int quantity = 1;
   final TextEditingController _obsController = TextEditingController();
   bool _added = false;
@@ -260,15 +259,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   Widget _buildProductImage(BuildContext context, {double size = 260}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: Transform.scale(
-          scale: 1.12,
+    return Hero(
+      tag: 'product_image_${widget.product.id}',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: SizedBox(
+          width: size,
+          height: size,
           child: ProductImage(
             product: widget.product,
+            memCacheWidth: (size * 2.5).round(),
+            memCacheHeight: (size * 2.5).round(),
             fit: BoxFit.cover,
             placeholderSize: 56,
           ),

@@ -45,9 +45,11 @@ class ProductCardGrid extends StatelessWidget {
     final badgeIconSize = isTablet ? 16.0 : 14.0;
     final badgeFontSize = isTablet ? 13.0 : AppTheme.fontSizeXs;
 
-    return FadeInUp(
-      duration: const Duration(milliseconds: 400),
-      delay: Duration(milliseconds: index * 80),
+    final animDelay = Duration(milliseconds: (index.clamp(0, 6) * 30));
+    return RepaintBoundary(
+      child: FadeInUp(
+      duration: const Duration(milliseconds: 250),
+      delay: animDelay,
       child: GestureDetector(
         onTap: onTap,
         child: Container(
@@ -76,6 +78,8 @@ class ProductCardGrid extends StatelessWidget {
                   aspectRatio: 4 / 3,
                   child: ProductImage(
                     product: product,
+                    memCacheWidth: 500,
+                    memCacheHeight: 375,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(20),
                     ),
@@ -101,7 +105,7 @@ class ProductCardGrid extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textPrimary(context),
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (product.description.trim().isNotEmpty) ...[
@@ -113,7 +117,7 @@ class ProductCardGrid extends StatelessWidget {
                             color: AppTheme.textSecondary(context),
                             height: 1.35,
                           ),
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -187,6 +191,6 @@ class ProductCardGrid extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 }

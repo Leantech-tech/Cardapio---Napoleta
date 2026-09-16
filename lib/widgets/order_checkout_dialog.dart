@@ -12,6 +12,9 @@ import '../services/customer_service.dart';
 import '../theme/app_theme.dart';
 import 'address_manager_dialog.dart';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../providers/auth_provider.dart';
+
 class OrderCheckoutDialog extends StatefulWidget {
   final int initialStep;
   final TipoEntrega? tipoEntregaInicial;
@@ -28,19 +31,21 @@ class OrderCheckoutDialog extends StatefulWidget {
 
   static Future<OrderCheckoutData?> show(
     BuildContext context, {
-    int initialStep = 1,
+    int? initialStep,
     TipoEntrega? tipoEntregaInicial,
     VoidCallback? onBack,
-    bool isTotem = false,
+    bool? isTotem,
   }) async {
+    final authProvider = context.read<AuthProvider>();
+    final totem = isTotem ?? (authProvider.useTotenMode || !kIsWeb);
     return showDialog<OrderCheckoutData>(
       context: context,
       barrierDismissible: false,
       builder: (_) => OrderCheckoutDialog(
-        initialStep: initialStep,
-        tipoEntregaInicial: tipoEntregaInicial,
+        initialStep: totem ? 2 : (initialStep ?? 1),
+        tipoEntregaInicial: totem ? TipoEntrega.retirada : tipoEntregaInicial,
         onBack: onBack,
-        isTotem: isTotem,
+        isTotem: totem,
       ),
     );
   }
@@ -71,8 +76,10 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
   @override
   void initState() {
     super.initState();
-    _step = widget.initialStep;
-    _tipoEntrega = widget.tipoEntregaInicial;
+    final authProvider = context.read<AuthProvider>();
+    final isTotemApp = widget.isTotem || authProvider.useTotenMode || !kIsWeb;
+    _step = isTotemApp ? 2 : widget.initialStep;
+    _tipoEntrega = isTotemApp ? TipoEntrega.retirada : widget.tipoEntregaInicial;
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadPaymentMethods());
   }
 
@@ -536,6 +543,10 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.read<AuthProvider>();
+    final isTotemApp = widget.isTotem || authProvider.useTotenMode || !kIsWeb;
+    final currentStep = isTotemApp ? 2 : _step;
+
     final screenWidth = MediaQuery.sizeOf(context).width;
     final screenHeight = MediaQuery.sizeOf(context).height;
     final isSmallPhone = screenWidth < 360;
@@ -558,7 +569,7 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
         child: Padding(
           padding: EdgeInsets.all(horizontalPadding),
           child: SingleChildScrollView(
-            child: _step == 1 ? _buildStep1() : _buildStep2(),
+            child: currentStep == 1 ? _buildStep1() : _buildStep2(),
           ),
         ),
       ),
@@ -672,6 +683,8 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
   }
 
   Widget _buildStep2() {
+    final authProvider = context.read<AuthProvider>();
+    final isTotemApp = widget.isTotem || authProvider.useTotenMode || !kIsWeb;
     final isEntrega = _tipoEntrega == TipoEntrega.entrega;
 
     return Column(
@@ -684,6 +697,8 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
               onPressed: () {
                 if (widget.onBack != null) {
                   widget.onBack!();
+                } else if (isTotemApp) {
+                  Navigator.of(context).pop();
                 } else {
                   setState(() => _step = 1);
                 }

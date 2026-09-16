@@ -17,6 +17,9 @@ class AdaptiveNetworkImage extends StatelessWidget {
   final Widget Function(BuildContext context)? placeholder;
   final Widget Function(BuildContext context, Object error)? errorBuilder;
 
+  final int? memCacheWidth;
+  final int? memCacheHeight;
+
   const AdaptiveNetworkImage({
     super.key,
     required this.imageUrl,
@@ -25,6 +28,8 @@ class AdaptiveNetworkImage extends StatelessWidget {
     this.height,
     this.placeholder,
     this.errorBuilder,
+    this.memCacheWidth,
+    this.memCacheHeight,
   });
 
   @override
@@ -35,6 +40,8 @@ class AdaptiveNetworkImage extends StatelessWidget {
         fit: fit,
         width: width,
         height: height,
+        cacheWidth: memCacheWidth,
+        cacheHeight: memCacheHeight,
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (wasSynchronouslyLoaded || frame != null) {
             return child;
@@ -55,6 +62,10 @@ class AdaptiveNetworkImage extends StatelessWidget {
       fit: fit,
       width: width,
       height: height,
+      memCacheWidth: memCacheWidth,
+      memCacheHeight: memCacheHeight,
+      maxWidthDiskCache: memCacheWidth,
+      maxHeightDiskCache: memCacheHeight,
       fadeInDuration: Duration.zero,
       fadeOutDuration: Duration.zero,
       placeholder: (context, url) =>

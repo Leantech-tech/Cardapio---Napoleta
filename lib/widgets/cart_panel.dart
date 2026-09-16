@@ -6,11 +6,15 @@ import 'cart_view.dart';
 class CartPanel extends StatelessWidget {
   final bool isOpen;
   final VoidCallback onClose;
+  final VoidCallback? onCheckoutComplete;
+  final VoidCallback? onOrderAbandoned;
 
   const CartPanel({
     super.key,
     required this.isOpen,
     required this.onClose,
+    this.onCheckoutComplete,
+    this.onOrderAbandoned,
   });
 
   @override
@@ -90,7 +94,8 @@ class CartPanel extends StatelessWidget {
                 ),
                 Expanded(
                   child: CartView(
-                    onCheckoutComplete: onClose,
+                    onCheckoutComplete: onCheckoutComplete ?? onClose,
+                    onOrderAbandoned: onOrderAbandoned,
                   ),
                 ),
               ],

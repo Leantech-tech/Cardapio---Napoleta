@@ -12,6 +12,7 @@ import '../providers/cart_provider.dart';
 import '../providers/checkout_provider.dart';
 import '../providers/menu_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/pricing_provider.dart';
 import '../models/order_checkout_data.dart';
 import '../theme/app_theme.dart';
 import '../data/api_config.dart';
@@ -279,6 +280,22 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
 
   void _goToCart() {
     setState(() => _isCartOpen = true);
+  }
+
+  /// Cliente removeu o último produto e informou que não vai pedir: fecha o
+  /// carrinho, limpa a identificação atual e volta à tela inicial (seletor
+  /// Açaí/Paleta) para que o próximo cliente se identifique.
+  void _handleOrderAbandoned() {
+    if (_isCartOpen) setState(() => _isCartOpen = false);
+    context.read<CartProvider>().clear();
+    context.read<CheckoutProvider>().clear();
+    context.read<PricingProvider>().finalizarPedido();
+    if (mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      if (context.read<AuthProvider>().useTotenMode) {
+        _mostrarSeletorModalidadeTotem();
+      }
+    }
   }
 
   void _acompanharPedido() {
@@ -999,6 +1016,9 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                           );
                         },
                         childCount: filteredProducts.length,
+                        addAutomaticKeepAlives: false,
+                        addRepaintBoundaries: true,
+                        addSemanticIndexes: false,
                       ),
                     ),
                   )
@@ -1022,6 +1042,9 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                           );
                         },
                         childCount: filteredProducts.length,
+                        addAutomaticKeepAlives: false,
+                        addRepaintBoundaries: true,
+                        addSemanticIndexes: false,
                       ),
                     ),
                   ),
@@ -1035,7 +1058,6 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final cartItemCount = context.watch<CartProvider>().totalItems;
     final menuProvider = context.watch<MenuProvider>();
     final authProvider = context.watch<AuthProvider>();
 
@@ -1212,35 +1234,40 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                       ],
                     ),
                   ),
-                  floatingActionButton: cartItemCount > 0
-                      ? TweenAnimationBuilder<double>(
-                          key: ValueKey(cartItemCount),
-                          tween: Tween(begin: 0.8, end: 1.0),
-                          duration: const Duration(milliseconds: 400),
-                          curve: Curves.elasticOut,
-                          builder: (context, scale, child) {
-                            return Transform.scale(
-                              scale: scale,
-                              child: child,
-                            );
-                          },
-                          child: FloatingActionButton.extended(
-                            onPressed: _goToCart,
-                            backgroundColor: AppTheme.brandPurple,
-                            icon: const Icon(
-                              Icons.shopping_bag_outlined,
+                  floatingActionButton: Consumer<CartProvider>(
+                    builder: (context, cart, _) {
+                      final count = cart.totalItems;
+                      if (count == 0) return const SizedBox.shrink();
+                      return TweenAnimationBuilder<double>(
+                        key: ValueKey(count),
+                        tween: Tween(begin: 0.8, end: 1.0),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.elasticOut,
+                        builder: (context, scale, child) {
+                          return Transform.scale(
+                            scale: scale,
+                            child: child,
+                          );
+                        },
+                        child: FloatingActionButton.extended(
+                          heroTag: 'cart_fab',
+                          onPressed: _goToCart,
+                          backgroundColor: AppTheme.brandPurple,
+                          icon: const Icon(
+                            Icons.shopping_bag_outlined,
+                            color: Colors.white,
+                          ),
+                          label: Text(
+                            '$count',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
-                            label: Text(
-                              '$cartItemCount',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
                           ),
-                        )
-                      : null,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               );
             },
@@ -1253,6 +1280,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
             child: SizedBox(
               width: isDesktop ? 320 : 280,
               child: MiniCartPreview(
+                onOrderAbandoned: _handleOrderAbandoned,
                 onCheckout: () async {
                   final authProvider = context.read<AuthProvider>();
                   final checkoutProvider = context.read<CheckoutProvider>();
@@ -1264,11 +1292,18 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
 
                   if (authProvider.useTotenMode && checkoutProvider.hasCheckoutData) {
                     checkoutData = checkoutProvider.checkoutData;
-                  } else {
+                  } else if (authProvider.useTotenMode) {
+                    // No totem o pedido é sempre retirada no balcão: vai direto
+                    // para a identificação, sem perguntar o tipo de entrega.
                     checkoutData = await OrderCheckoutDialog.show(
                       context,
-                      isTotem: authProvider.useTotenMode,
+                      initialStep: 2,
+                      tipoEntregaInicial: TipoEntrega.retirada,
+                      isTotem: true,
+                      onBack: () => Navigator.of(context).pop(),
                     );
+                  } else {
+                    checkoutData = await OrderCheckoutDialog.show(context);
                   }
 
                   if (checkoutData == null || !context.mounted) return;
@@ -1297,6 +1332,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
         CartPanel(
           isOpen: _isCartOpen,
           onClose: () => setState(() => _isCartOpen = false),
+          onOrderAbandoned: _handleOrderAbandoned,
         ),
       ],
     );

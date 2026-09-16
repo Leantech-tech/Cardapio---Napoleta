@@ -8,6 +8,8 @@ class ProductImage extends StatelessWidget {
   final BoxFit fit;
   final BorderRadius? borderRadius;
   final double placeholderSize;
+  final int? memCacheWidth;
+  final int? memCacheHeight;
 
   const ProductImage({
     super.key,
@@ -15,6 +17,8 @@ class ProductImage extends StatelessWidget {
     this.fit = BoxFit.cover,
     this.borderRadius,
     this.placeholderSize = 40,
+    this.memCacheWidth,
+    this.memCacheHeight,
   });
 
   static final Map<String, _PlaceholderStyle> _styles = {
@@ -75,6 +79,8 @@ class ProductImage extends StatelessWidget {
         key: ValueKey(imageUrl),
         imageUrl: imageUrl,
         fit: fit,
+        memCacheWidth: memCacheWidth,
+        memCacheHeight: memCacheHeight,
         placeholder: (context) => _Placeholder(style: style, iconSize: placeholderSize),
         errorBuilder: (context, error) => _Placeholder(style: style, iconSize: placeholderSize),
       );

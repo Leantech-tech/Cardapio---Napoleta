@@ -49,9 +49,13 @@ class ProductCard extends StatelessWidget {
         ? 22.0
         : (isTablet ? 20.0 : (isSmallPhone ? 16.0 : 18.0));
 
-    return FadeInUp(
-      duration: const Duration(milliseconds: 400),
-      delay: Duration(milliseconds: index * 80),
+    // Animação limitada aos primeiros itens e delay capado para não atrasar
+    // a percepção de velocidade ao abrir produtos.
+    final animDelay = Duration(milliseconds: (index.clamp(0, 6) * 30));
+    return RepaintBoundary(
+      child: FadeInUp(
+      duration: const Duration(milliseconds: 250),
+      delay: animDelay,
       child: GestureDetector(
         onTap: onTap,
         child: Container(
@@ -73,7 +77,9 @@ class ProductCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
+              Hero(
+                  tag: 'product_image_${product.id}',
+                  child: ClipRRect(
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   bottomLeft: Radius.circular(20),
@@ -83,13 +89,17 @@ class ProductCard extends StatelessWidget {
                   height: imageHeight,
                   child: ProductImage(
                     product: product,
+                    memCacheWidth: (imageWidth * 2).round(),
+                    memCacheHeight: (imageHeight * 2).round(),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       bottomLeft: Radius.circular(20),
                     ),
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
+            ),
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
@@ -109,7 +119,7 @@ class ProductCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textPrimary(context),
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 3),
@@ -193,6 +203,6 @@ class ProductCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 }

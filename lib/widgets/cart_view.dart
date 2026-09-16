@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/checkout_provider.dart';
 import '../theme/app_theme.dart';
 import '../models/order_checkout_data.dart';
 import '../services/barcode_scanner_service.dart';
@@ -16,8 +17,9 @@ import '../widgets/order_checkout_dialog.dart';
 
 class CartView extends StatefulWidget {
   final VoidCallback? onCheckoutComplete;
+  final VoidCallback? onOrderAbandoned;
 
-  const CartView({super.key, this.onCheckoutComplete});
+  const CartView({super.key, this.onCheckoutComplete, this.onOrderAbandoned});
 
   @override
   State<CartView> createState() => _CartViewState();
@@ -53,7 +55,28 @@ class _CartViewState extends State<CartView> {
     final autenticado = await requireAuth(context);
     if (!mounted || !autenticado) return;
 
-    final checkoutData = await OrderCheckoutDialog.show(context);
+    final authProvider = context.read<AuthProvider>();
+    final checkoutProvider = context.read<CheckoutProvider>();
+
+    OrderCheckoutData? checkoutData;
+
+    if (authProvider.useTotenMode && checkoutProvider.hasCheckoutData) {
+      checkoutData = checkoutProvider.checkoutData;
+    } else if (authProvider.useTotenMode) {
+      // No totem o pedido é sempre retirada no balcão: vai direto para a
+      // identificação do cliente, sem perguntar o tipo de entrega.
+      checkoutData = await OrderCheckoutDialog.show(
+        context,
+        initialStep: 2,
+        tipoEntregaInicial: TipoEntrega.retirada,
+        isTotem: true,
+        onBack: () {
+          if (mounted) Navigator.of(context).pop();
+        },
+      );
+    } else {
+      checkoutData = await OrderCheckoutDialog.show(context);
+    }
     if (checkoutData == null || !mounted) return;
 
     final cart = context.read<CartProvider>();
@@ -75,6 +98,20 @@ class _CartViewState extends State<CartView> {
         widget.onCheckoutComplete?.call();
       },
     );
+  }
+
+  /// Remove um item do mostruário. O botão "Cancelar pedido" (abaixo) é o
+  /// responsável por limpar todos os itens e voltar à tela inicial.
+  void _handleRemoveItem(
+    CartProvider cart,
+    dynamic item, {
+    bool decrementOnly = false,
+  }) {
+    if (decrementOnly && item.quantity > 1) {
+      cart.updateQuantity(item.id, item.quantity - 1);
+    } else {
+      cart.removeItem(item.id);
+    }
   }
 
   String _formatPrice(double price) {
@@ -113,6 +150,8 @@ class _CartViewState extends State<CartView> {
           imageUrl: resolvedUrl,
           width: imageSize,
           height: imageSize,
+          memCacheWidth: (imageSize * 2).round(),
+          memCacheHeight: (imageSize * 2).round(),
           fit: BoxFit.cover,
           placeholder: (context) => Container(
             width: imageSize,
@@ -361,7 +400,7 @@ class _CartViewState extends State<CartView> {
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary(context),
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (item.selectedOptions.isNotEmpty)
@@ -405,9 +444,10 @@ class _CartViewState extends State<CartView> {
                           _buildIconButton(
                             icon: Icons.remove,
                             isSmallPhone: isSmallPhone,
-                            onTap: () => cart.updateQuantity(
-                              item.id,
-                              item.quantity - 1,
+                            onTap: () => _handleRemoveItem(
+                              cart,
+                              item,
+                              decrementOnly: true,
                             ),
                           ),
                           Padding(
@@ -447,7 +487,7 @@ class _CartViewState extends State<CartView> {
             ),
           ),
           IconButton(
-            onPressed: () => cart.removeItem(item.id),
+            onPressed: () => _handleRemoveItem(cart, item),
             icon: Icon(
               Icons.delete_outline,
               color: AppTheme.textSecondary(context),
@@ -556,6 +596,32 @@ class _CartViewState extends State<CartView> {
                 style: GoogleFonts.poppins(
                   fontSize: isSmallPhone ? 15 : 17,
                   fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton(
+              onPressed: () {
+                cart.clear();
+                widget.onOrderAbandoned?.call();
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red[600],
+                side: BorderSide(
+                  color: Colors.red[400]!,
+                  width: 1.5,
+                ),
+                minimumSize: Size(double.infinity, isSmallPhone ? 44 : 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isSmallPhone ? 14 : 16),
+                ),
+              ),
+              child: Text(
+                'Cancelar Pedido',
+                style: GoogleFonts.poppins(
+                  fontSize: isSmallPhone ? 14 : 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red[600],
                 ),
               ),
             ),

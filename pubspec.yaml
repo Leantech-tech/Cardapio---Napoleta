@@ -92,10 +92,10 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: "assets/images/logo.png"
-    background_color: "#7B1FA2"
-    theme_color: "#7B1FA2"
+    background_color: "#105B3F"
+    theme_color: "#105B3F"
   image_path: "assets/images/logo.png"
-  adaptive_icon_background: "#7B1FA2"
+  adaptive_icon_background: "#105B3F"
   adaptive_icon_foreground: "assets/images/logo.png"
   #
   # For details regarding fonts from package dependencies,

@@ -10,11 +10,13 @@ import 'adaptive_image.dart';
 class MiniCartPreview extends StatelessWidget {
   final VoidCallback? onClose;
   final VoidCallback onCheckout;
+  final VoidCallback? onOrderAbandoned;
 
   const MiniCartPreview({
     super.key,
     this.onClose,
     required this.onCheckout,
+    this.onOrderAbandoned,
   });
 
   String _formatPrice(double price) {
@@ -47,6 +49,8 @@ class MiniCartPreview extends StatelessWidget {
           imageUrl: resolvedUrl,
           width: 64,
           height: 64,
+          memCacheWidth: 128,
+          memCacheHeight: 128,
           fit: BoxFit.cover,
           placeholder: (context) => Container(
             width: 64,
@@ -84,6 +88,16 @@ class MiniCartPreview extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Remove um item do mostruário. O botão "Cancelar pedido" abaixo limpa
+  /// todos os itens e volta à tela inicial (seletor Açaí/Paletas).
+  void _handleRemoveItem(
+    BuildContext context,
+    CartProvider cart,
+    CartItem item,
+  ) {
+    cart.removeItem(item.id);
   }
 
   Widget _buildItem(BuildContext context, CartItem item, CartProvider cart) {
@@ -124,7 +138,7 @@ class MiniCartPreview extends StatelessWidget {
           Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => cart.removeItem(item.id),
+              onTap: () => _handleRemoveItem(context, cart, item),
               borderRadius: BorderRadius.circular(8),
               child: Padding(
                 padding: const EdgeInsets.all(8),
@@ -299,6 +313,37 @@ class MiniCartPreview extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: AppTheme.fontSizeMd,
                           fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: isEmpty
+                          ? null
+                          : () {
+                              cart.clear();
+                              onOrderAbandoned?.call();
+                            },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red[600],
+                        side: BorderSide(
+                          color: isEmpty
+                              ? AppTheme.border(context)
+                              : Colors.red[400]!,
+                          width: 1.5,
+                        ),
+                        disabledForegroundColor: AppTheme.textSecondary(context).withValues(alpha: 0.4),
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancelar pedido',
+                        style: GoogleFonts.poppins(
+                          fontSize: AppTheme.fontSizeMd,
+                          fontWeight: FontWeight.w600,
+                          color: isEmpty ? null : Colors.red[600],
                         ),
                       ),
                     ),
