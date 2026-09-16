@@ -100,6 +100,54 @@ class MiniCartPreview extends StatelessWidget {
     cart.removeItem(item.id);
   }
 
+  /// Pergunta ao cliente se deseja cancelar o pedido. "Sim" limpa todos os
+  /// itens e volta à tela inicial (seletor Açaí/Paletas); "Não" apenas fecha o
+  /// popup e mantém o mostruário.
+  Future<void> _confirmCancelOrder(
+    BuildContext context,
+    CartProvider cart,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'Deseja cancelar pedido?',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary(dialogContext),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(
+              'Não',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textSecondary(dialogContext),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              'Sim',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                color: Colors.red[600],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      cart.clear();
+      onOrderAbandoned?.call();
+    }
+  }
+
   Widget _buildItem(BuildContext context, CartItem item, CartProvider cart) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -320,10 +368,7 @@ class MiniCartPreview extends StatelessWidget {
                     OutlinedButton(
                       onPressed: isEmpty
                           ? null
-                          : () {
-                              cart.clear();
-                              onOrderAbandoned?.call();
-                            },
+                          : () => _confirmCancelOrder(context, cart),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red[600],
                         side: BorderSide(

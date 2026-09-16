@@ -100,6 +100,51 @@ class _CartViewState extends State<CartView> {
     );
   }
 
+  /// Confirma com o cliente antes de cancelar o pedido. "Sim" limpa todos os
+  /// itens e volta à tela inicial (seletor Açaí/Paletas); "Não" apenas fecha o
+  /// popup e mantém o mostruário.
+  Future<void> _confirmCancelOrder() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'Deseja cancelar pedido?',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary(dialogContext),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(
+              'Não',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textSecondary(dialogContext),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              'Sim',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                color: Colors.red[600],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      context.read<CartProvider>().clear();
+      widget.onOrderAbandoned?.call();
+    }
+  }
+
   /// Remove um item do mostruário. O botão "Cancelar pedido" (abaixo) é o
   /// responsável por limpar todos os itens e voltar à tela inicial.
   void _handleRemoveItem(
@@ -552,7 +597,7 @@ class _CartViewState extends State<CartView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${cart.totalItems} item${cart.totalItems != 1 ? 's' : ''}',
+                  '${cart.totalItems} ${cart.totalItems == 1 ? 'item' : 'itens'}',
                   style: GoogleFonts.inter(
                     fontSize: isSmallPhone ? 12 : 14,
                     color: AppTheme.textSecondary(context),
@@ -601,10 +646,7 @@ class _CartViewState extends State<CartView> {
             ),
             const SizedBox(height: 10),
             OutlinedButton(
-              onPressed: () {
-                cart.clear();
-                widget.onOrderAbandoned?.call();
-              },
+              onPressed: _confirmCancelOrder,
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red[600],
                 side: BorderSide(
