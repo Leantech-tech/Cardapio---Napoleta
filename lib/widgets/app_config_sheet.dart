@@ -275,7 +275,7 @@ class _AppConfigSheetState extends State<AppConfigSheet> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildModeCheckbox(
-                  label: 'Toten',
+                  label: 'Totem',
                   value: _useTotenMode,
                   onChanged: (value) {
                     if (value != null && value) {

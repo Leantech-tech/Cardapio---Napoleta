@@ -923,7 +923,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            '${filteredProducts.length} item${filteredProducts.length != 1 ? 's' : ''}',
+                            '${filteredProducts.length} ${filteredProducts.length == 1 ? 'item' : 'itens'}',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
