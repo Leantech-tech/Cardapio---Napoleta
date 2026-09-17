@@ -541,6 +541,67 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
     }
   }
 
+  /// Identificação rápida do totem: o cliente não informa CPF nem nome e o
+  /// pedido é vinculado ao cadastro único "Consumidor balcão".
+  Future<void> _confirmarConsumidorBalcao() async {
+    setState(() {
+      _error = null;
+      _isLoading = true;
+    });
+
+    try {
+      final cadastrado =
+          await CustomerService().buscarOuCriarConsumidorBalcao();
+      if (!mounted) return;
+
+      // Mesma validação de fechamento do fluxo por CPF: o carrinho pode já
+      // ter itens quando o popup abre na finalização.
+      final pricing = context.read<PricingProvider>();
+      await pricing.atualizarCliente(cadastrado);
+      if (!mounted) return;
+      final validacao = await pricing.validarFechamento();
+      if (!mounted) return;
+      if (validacao == ValidacaoFechamento.precosAtualizados) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Os preços foram atualizados. Confira o total e confirme novamente.';
+        });
+        return;
+      }
+
+      // Forma de pagamento provisória, como no fluxo de identificação por
+      // CPF: o popup de finalização substituirá pela escolhida pelo cliente.
+      final methods = context.read<PaymentMethodProvider>().methods;
+      final paymentMethod = methods.isNotEmpty
+          ? methods.first
+          : const PaymentMethod(
+              id: 0,
+              descricao: 'Não selecionada',
+              permiteParcelamento: false,
+              parcelasMaximas: 1,
+              intervaloPadrao: 30,
+              isAprazo: false,
+            );
+
+      final data = OrderCheckoutData(
+        tipoEntrega: _tipoEntrega ?? TipoEntrega.retirada,
+        nome: cadastrado.nome,
+        cpf: cadastrado.cpfFormatado,
+        paymentMethod: paymentMethod,
+        customerId: cadastrado.id,
+      );
+
+      Navigator.of(context).pop(data);
+    } catch (e) {
+      debugPrint('OrderCheckoutDialog: erro ao confirmar consumidor balcão: $e');
+      if (!mounted) return;
+      setState(() {
+        _error = 'Erro ao identificar cliente: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = context.read<AuthProvider>();
@@ -872,6 +933,31 @@ class _OrderCheckoutDialogState extends State<OrderCheckoutDialog> {
                   ),
           ),
         ),
+        if (widget.isTotem) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: OutlinedButton.icon(
+              onPressed: _isLoading ? null : _confirmarConsumidorBalcao,
+              icon: const Icon(Icons.storefront_outlined, size: 20),
+              label: Text(
+                'Consumidor balcão',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.brandPurple,
+                side: const BorderSide(color: AppTheme.brandPurple, width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

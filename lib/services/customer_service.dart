@@ -222,6 +222,36 @@ class CustomerService {
     return criar(customer, tipoEndereco: tipoEndereco);
   }
 
+  /// Nome fixo do cliente genérico de balcão, usado quando o cliente do totem
+  /// opta por não se identificar. Todos os pedidos dessa modalidade
+  /// compartilham o mesmo cadastro.
+  static const String nomeConsumidorBalcao = 'Consumidor balcão';
+
+  /// Busca o cadastro único de "Consumidor balcão" pelo nome (restrito à
+  /// empresa) e o cria na primeira utilização. Como esse cliente não tem CPF,
+  /// a busca por CPF nunca o encontraria — sem esta checagem por nome cada
+  /// pedido geraria um cadastro duplicado.
+  Future<Customer> buscarOuCriarConsumidorBalcao() async {
+    final pessoas = await _db.select(
+      'pessoa',
+      filters: {'eq_nome': nomeConsumidorBalcao},
+      order: 'created_at.desc',
+    );
+
+    final elegivel = filtrarCandidatos(pessoas, ApiConfig.empresaId);
+    if (elegivel != null) {
+      debugPrint(
+        'CustomerService: Consumidor balcão já existente - id=${elegivel['id']}',
+      );
+      return Customer.fromMap({...elegivel, 'cpf': ''});
+    }
+
+    return criar(
+      const Customer(nome: nomeConsumidorBalcao, cpf: ''),
+      tipoEndereco: 'retirada',
+    );
+  }
+
   Future<Customer> salvarClienteEEndereco(
     Customer customer,
     CustomerAddress address, {

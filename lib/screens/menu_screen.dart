@@ -282,9 +282,21 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     setState(() => _isCartOpen = true);
   }
 
-  /// Cliente removeu o último produto e informou que não vai pedir: fecha o
-  /// carrinho, limpa a identificação atual e volta à tela inicial (seletor
-  /// Açaí/Paleta) para que o próximo cliente se identifique.
+  /// Pedido finalizado: fecha o painel do carrinho, descarta a identificação
+  /// do cliente e, no modo totem, volta à tela inicial (seletor Açaí/Paleta)
+  /// para o próximo atendimento. Carrinho e preços já foram limpos pelo fluxo
+  /// de finalização.
+  void _handleCheckoutFinished() {
+    if (_isCartOpen) setState(() => _isCartOpen = false);
+    if (!mounted || !context.read<AuthProvider>().useTotenMode) return;
+    context.read<CheckoutProvider>().clear();
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    _mostrarSeletorModalidadeTotem();
+  }
+
+  /// Encerra o atendimento atual (pedido cancelado ou saída pelo botão de
+  /// início): fecha o carrinho, limpa a identificação e volta à tela inicial
+  /// (seletor Açaí/Paleta) para que o próximo cliente se identifique.
   void _handleOrderAbandoned() {
     if (_isCartOpen) setState(() => _isCartOpen = false);
     context.read<CartProvider>().clear();
@@ -625,6 +637,16 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (authProvider.useTotenMode)
+                IconButton(
+                  onPressed: _handleOrderAbandoned,
+                  icon: Icon(
+                    Icons.home_outlined,
+                    color: AppTheme.textSecondary(context),
+                  ),
+                  tooltip: 'Voltar à tela inicial',
+                  visualDensity: isMobile ? VisualDensity.compact : VisualDensity.standard,
+                ),
               if (!kIsWeb)
                 IconButton(
                   onPressed: () => _showLogoutMenu(context, authProvider),
@@ -635,7 +657,9 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   tooltip: 'Configurações',
                   visualDensity: isMobile ? VisualDensity.compact : VisualDensity.standard,
                 ),
-              if (!authProvider.useComandaFeature)
+              // Acompanhamento de pedido é exclusivo do modo Link: no totem
+              // (modo quiosque) o botão nunca aparece.
+              if (!authProvider.useComandaFeature && !authProvider.useTotenMode)
                 IconButton(
                   onPressed: _acompanharPedido,
                   icon: Icon(
@@ -1313,13 +1337,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     context,
                     cart,
                     checkoutData: checkoutData,
-                    onSuccess: () {
-                      if (!context.mounted) return;
-                      if (authProvider.useTotenMode) {
-                        checkoutProvider.clear();
-                        _mostrarSeletorModalidadeTotem();
-                      }
-                    },
+                    onSuccess: _handleCheckoutFinished,
                   );
                 },
               ),
@@ -1332,6 +1350,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
         CartPanel(
           isOpen: _isCartOpen,
           onClose: () => setState(() => _isCartOpen = false),
+          onCheckoutComplete: _handleCheckoutFinished,
           onOrderAbandoned: _handleOrderAbandoned,
         ),
       ],
